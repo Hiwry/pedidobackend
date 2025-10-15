@@ -678,7 +678,7 @@ class OrderEditWizardController extends Controller
         }
 
         // Criar log de edição
-        OrderEditHistory::create([
+        \App\Models\OrderEditHistory::create([
             'order_id' => $order->id,
             'user_id' => Auth::id(),
             'user_name' => Auth::user()->name,
