@@ -87,7 +87,7 @@
                                         <svg class="w-3 h-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
                                         </svg>
-                                    </div>
+                                </div>
                                     <h2 class="text-sm font-medium text-gray-900">Personalização *</h2>
                                 </div>
 
@@ -95,7 +95,7 @@
                                     <p class="text-xs text-gray-600 mb-3">Selecione uma ou mais opções de personalização</p>
                                     <div class="grid grid-cols-2 gap-3" id="personalizacao-options">
                                         <!-- Será preenchido via JavaScript -->
-                                    </div>
+                        </div>
                 </div>
             </div>
 
@@ -277,7 +277,7 @@
                                         </label>
                                     </div>
                                 </div>
-                            </div>
+                                        </div>
 
                             <!-- Seção: Preços -->
                             <div class="space-y-3">
@@ -392,7 +392,7 @@
                 'detail' => $item->detail,
                 'unit_price' => $item->unit_price,
                 'total_price' => $item->total_price,
-                'sizes' => json_decode($item->sizes, true) ?: []
+                'sizes' => is_string($item->sizes) ? json_decode($item->sizes, true) ?: [] : ($item->sizes ?: [])
             ];
         })->toArray();
 
