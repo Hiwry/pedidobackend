@@ -92,6 +92,8 @@ class OrderWizardController extends Controller
 
         if ($action === 'add_item') {
             return $this->addItem($request);
+        } elseif ($action === 'update_item') {
+            return $this->updateItem($request);
         } elseif ($action === 'finish') {
             return $this->finishSewing($request);
         } elseif ($action === 'delete_item') {
@@ -166,6 +168,98 @@ class OrderWizardController extends Controller
         session()->push('item_personalizations.' . $item->id, $validated['personalizacao']);
 
         return redirect()->route('orders.wizard.sewing')->with('success', 'Item ' . $itemNumber . ' adicionado com sucesso!');
+    }
+
+    private function updateItem(Request $request)
+    {
+        $validated = $request->validate([
+            'editing_item_id' => 'required|integer',
+            'personalizacao' => 'required|array|min:1',
+            'personalizacao.*' => 'exists:product_options,id',
+            'tecido' => 'required|exists:product_options,id',
+            'tipo_tecido' => 'nullable|exists:product_options,id',
+            'cor' => 'required|exists:product_options,id',
+            'tipo_corte' => 'required|exists:product_options,id',
+            'detalhe' => 'nullable|exists:product_options,id',
+            'gola' => 'required|exists:product_options,id',
+            'tamanhos' => 'required|array',
+            'quantity' => 'required|integer|min:1',
+            'unit_price' => 'required|numeric|min:0',
+            'item_cover_image' => 'nullable|image|max:10240',
+        ]);
+
+        $order = Order::with('items')->findOrFail(session('current_order_id'));
+        $item = $order->items()->findOrFail($validated['editing_item_id']);
+
+        // Processar upload da imagem de capa do item
+        $coverImagePath = $item->cover_image; // Manter imagem atual se não houver nova
+        if ($request->hasFile('item_cover_image')) {
+            $coverImage = $request->file('item_cover_image');
+            $coverImageName = time() . '_' . uniqid() . '_' . $coverImage->getClientOriginalName();
+            $coverImagePath = $coverImage->storeAs('orders/items', $coverImageName, 'public');
+        }
+
+        // Buscar nomes das opções
+        $personalizacoes = \App\Models\ProductOption::whereIn('id', $validated['personalizacao'])->get();
+        $personalizacaoNames = $personalizacoes->pluck('name')->join(', ');
+
+        $tecido = \App\Models\ProductOption::find($validated['tecido']);
+        $tipoTecido = $validated['tipo_tecido'] ? \App\Models\ProductOption::find($validated['tipo_tecido']) : null;
+        $cor = \App\Models\ProductOption::find($validated['cor']);
+        $tipoCorte = \App\Models\ProductOption::find($validated['tipo_corte']);
+        $detalhe = $validated['detalhe'] ? \App\Models\ProductOption::find($validated['detalhe']) : null;
+        $gola = \App\Models\ProductOption::find($validated['gola']);
+
+        // Calcular preço base
+        $basePrice = $tipoCorte->price ?? 0;
+        if ($detalhe) {
+            $basePrice += $detalhe->price ?? 0;
+        }
+        if ($gola) {
+            $basePrice += $gola->price ?? 0;
+        }
+
+        // Processar tamanhos
+        $sizes = [];
+        $totalQuantity = 0;
+        foreach ($validated['tamanhos'] as $size => $quantity) {
+            if ($quantity > 0) {
+                $sizes[$size] = $quantity;
+                $totalQuantity += $quantity;
+            }
+        }
+
+        // Atualizar item
+        $item->update([
+            'print_type' => $personalizacaoNames,
+            'fabric' => $tecido->name . ($tipoTecido ? ' - ' . $tipoTecido->name : ''),
+            'color' => $cor->name,
+            'collar' => $gola->name,
+            'model' => $tipoCorte->name,
+            'detail' => $detalhe ? $detalhe->name : null,
+            'sizes' => json_encode($sizes),
+            'quantity' => $totalQuantity,
+            'unit_price' => $basePrice,
+            'total_price' => $totalQuantity * $basePrice,
+            'cover_image' => $coverImagePath,
+        ]);
+
+        $order->update([
+            'subtotal' => $order->items()->sum('total_price'),
+            'total_items' => $order->items()->sum('quantity'),
+        ]);
+
+        // Atualizar personalizações na sessão
+        session(['item_personalizations.' . $item->id => [$validated['personalizacao']]]);
+
+        \Log::info('Item atualizado com sucesso', [
+            'item_id' => $item->id,
+            'order_id' => $order->id,
+            'new_quantity' => $totalQuantity,
+            'new_unit_price' => $basePrice
+        ]);
+
+        return redirect()->route('orders.wizard.sewing')->with('success', 'Item atualizado com sucesso!');
     }
 
     private function deleteItem(Request $request)
