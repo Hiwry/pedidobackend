@@ -378,9 +378,8 @@
         </div>
     </div>
 
-    <script>
-        // Dados dos itens atuais do pedido
-        const currentItems = @json($order->items->map(function($item) {
+    @php
+        $currentItemsData = $order->items->map(function($item) {
             return [
                 'id' => $item->id,
                 'print_type' => $item->print_type,
@@ -395,10 +394,17 @@
                 'total_price' => $item->total_price,
                 'sizes' => json_decode($item->sizes, true) ?: []
             ];
-        }));
+        })->toArray();
+
+        $productOptionsData = \App\Models\ProductOption::all()->groupBy('type')->toArray();
+    @endphp
+
+    <script>
+        // Dados dos itens atuais do pedido
+        const currentItems = @json($currentItemsData);
 
         // Dados das opções de produto
-        const productOptions = @json(\App\Models\ProductOption::all()->groupBy('type'));
+        const productOptions = @json($productOptionsData);
 
         let items = [...currentItems];
         let editingIndex = null;
