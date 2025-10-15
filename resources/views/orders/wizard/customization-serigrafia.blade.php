@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Novo Pedido - Personalização Serigrafia</title>
+    <!-- TODO: Em produção, substituir pelo Tailwind compilado via PostCSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <x-app-header />
+
+    <div class="max-w-6xl mx-auto p-6">
+        <!-- Progress Bar -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-medium text-indigo-600">Etapa 3 de 5</span>
+                <span class="text-sm text-gray-500">Personalização - Serigrafia</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2">
+                <div class="bg-indigo-600 h-2 rounded-full" style="width: 60%"></div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h1 class="text-2xl font-semibold mb-6">Personalização - Serigrafia</h1>
+
+            <form method="POST" action="{{ route('orders.wizard.customization') }}" id="customization-form" enctype="multipart/form-data">
+                @csrf
+                
+                <input type="hidden" name="total_shirts" value="{{ session('total_shirts', 0) }}" id="total-shirts">
+                <input type="hidden" name="sublimations" id="sublimations-data">
+                <input type="hidden" name="personalization_type" value="serigrafia">
+
+                <!-- Informações do Pedido -->
+                <div class="bg-blue-50 rounded-lg p-4 mb-6 border border-blue-200">
+                    <h3 class="font-semibold mb-2">Informações do Pedido</h3>
+                    <p class="text-sm">Total de camisas: <strong id="display-total-shirts">{{ session('total_shirts', 0) }}</strong></p>
+                </div>
+
+                <!-- Nome da Arte -->
+                <div class="mb-6">
+                    <label for="art_name" class="block text-sm font-medium text-gray-700 mb-2">Nome da Arte *</label>
+                    <input type="text" id="art_name" name="art_name" required
+                           class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                           placeholder="Ex: Logo Empresa XYZ">
+                </div>
+
+                <!-- Imagem de Capa -->
+                <div class="mb-6">
+                    <label for="cover_image" class="block text-sm font-medium text-gray-700 mb-2">Imagem de Capa do Pedido</label>
+                    <input type="file" id="cover_image" name="cover_image" accept="image/*"
+                           class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                           onchange="previewCoverImage(event)">
+                    <div id="cover-preview" class="mt-3 hidden">
+                        <img id="cover-preview-img" src="" alt="Preview" class="max-w-xs rounded-lg border">
+                    </div>
+                </div>
+
+                <!-- Arquivos da Arte -->
+                <div class="mb-6">
+                    <label for="art_files" class="block text-sm font-medium text-gray-700 mb-2">Arquivos da Arte (múltiplos)</label>
+                    <input type="file" id="art_files" name="art_files[]" multiple
+                           class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                           onchange="displayFileList()">
+                    <p class="text-xs text-gray-500 mt-1">Você pode selecionar múltiplos arquivos (AI, PDF, PNG, JPG, etc)</p>
+                    <div id="file-list" class="mt-3 space-y-2"></div>
+                </div>
+
+                <!-- Tamanhos de Aplicação Serigrafia -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold mb-4">Selecione o Tamanho da Aplicação</h3>
+                    <div class="grid grid-cols-3 gap-4" id="size-buttons">
+                        <!-- Será preenchido via JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Aplicações Adicionadas -->
+                <div id="applications-container" class="mb-6">
+                    <h3 class="text-lg font-semibold mb-4">Aplicações Adicionadas</h3>
+                    <p class="text-gray-500 text-sm mb-3" id="no-applications">Nenhuma aplicação adicionada ainda.</p>
+                    <div id="applications-list" class="space-y-3">
+                    </div>
+                </div>
+
+                <!-- Resumo de Valores -->
+                <div class="bg-green-50 rounded-lg p-4 border border-green-200 mb-6">
+                    <h3 class="font-semibold mb-3">Resumo de Valores</h3>
+                    <p class="text-xs text-gray-600 mb-2">* A partir de 3 aplicações: 2 com valor cheio + demais com 50% de desconto</p>
+                    <div id="price-breakdown" class="space-y-2 text-sm">
+                        <!-- Será preenchido via JavaScript -->
+                    </div>
+                    <div class="flex justify-between font-bold text-lg pt-3 border-t mt-3">
+                        <span>Total:</span>
+                        <span id="total-price">R$ 0,00</span>
+                    </div>
+                </div>
+
+                <div class="flex justify-between pt-4">
+                    <a href="{{ route('orders.wizard.sewing') }}" class="px-4 py-2 text-gray-600 hover:text-gray-900">← Voltar</a>
+                    <button type="submit" 
+                            class="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        Continuar →
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para adicionar aplicação -->
+    <div id="application-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <h3 class="text-xl font-semibold mb-4">Adicionar Aplicação - <span id="modal-size-name"></span></h3>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Local da Aplicação *</label>
+                <select id="modal-location" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <option value="">Selecione</option>
+                </select>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Quantidade de Cores * (máx. 6)</label>
+                <div class="grid grid-cols-3 gap-2">
+                    <button type="button" onclick="selectColorCount(1)" class="color-btn p-3 border-2 rounded hover:border-indigo-500" data-colors="1">1 Cor</button>
+                    <button type="button" onclick="selectColorCount(2)" class="color-btn p-3 border-2 rounded hover:border-indigo-500" data-colors="2">2 Cores</button>
+                    <button type="button" onclick="selectColorCount(3)" class="color-btn p-3 border-2 rounded hover:border-indigo-500" data-colors="3">3 Cores</button>
+                    <button type="button" onclick="selectColorCount(4)" class="color-btn p-3 border-2 rounded hover:border-indigo-500" data-colors="4">4 Cores</button>
+                    <button type="button" onclick="selectColorCount(5)" class="color-btn p-3 border-2 rounded hover:border-indigo-500" data-colors="5">5 Cores</button>
+                    <button type="button" onclick="selectColorCount(6)" class="color-btn p-3 border-2 rounded hover:border-indigo-500" data-colors="6">6 Cores</button>
+                </div>
+                <input type="hidden" id="modal-color-count" value="1">
+            </div>
+
+            <div class="mb-4">
+                <label class="flex items-center">
+                    <input type="checkbox" id="modal-has-neon" onchange="updateModalPrices()"
+                           class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                    <span class="ml-2 text-sm font-medium text-gray-700">Cor Neon (+50% no valor do tamanho)</span>
+                </label>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Quantidade de Aplicações *</label>
+                <input type="number" id="modal-quantity" min="1" value="1" 
+                       class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+            </div>
+
+            <div class="bg-gray-50 rounded p-3 mb-4">
+                <p class="text-sm text-gray-600">Valor base: <strong id="modal-base-price">R$ 0,00</strong></p>
+                <p class="text-sm text-gray-600" id="neon-info" style="display: none;">Acréscimo neon: <strong id="modal-neon-price">R$ 0,00</strong></p>
+                <p class="text-sm text-gray-600">Valor unitário: <strong id="modal-unit-price">R$ 0,00</strong></p>
+                <p class="text-sm text-gray-600">Subtotal: <strong id="modal-subtotal">R$ 0,00</strong></p>
+            </div>
+
+            <div class="flex justify-end space-x-3">
+                <button type="button" onclick="closeModal()" 
+                        class="px-4 py-2 text-gray-600 hover:text-gray-900">
+                    Cancelar
+                </button>
+                <button type="button" onclick="addApplication()" 
+                        class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
+                    Adicionar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let sizes = [];
+        let locations = [];
+        let colors = [];
+        let applications = [];
+        let totalShirts = {{ session('total_shirts', 0) }};
+        let currentSize = null;
+        let selectedColorCount = 1;
+
+        // Apenas A4, ESCUDO e A3 para Serigrafia
+        const allowedSizes = ['A4', 'ESCUDO', 'A3'];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadData();
+        });
+
+        function loadData() {
+            Promise.all([
+                fetch('/api/sublimation-sizes').then(r => r.json()),
+                fetch('/api/sublimation-locations').then(r => r.json()),
+                fetch('/api/serigraphy-colors').then(r => r.json())
+            ]).then(([sizesData, locationsData, colorsData]) => {
+                sizes = sizesData.filter(s => allowedSizes.includes(s.name));
+                locations = locationsData;
+                colors = colorsData;
+                renderSizeButtons();
+                renderLocationOptions();
+                renderColorButtons();
+            });
+        }
+
+        function renderColorButtons() {
+            // Atualizar botões de cores com preços
+            colors.forEach(color => {
+                const colorCount = color.id;
+                const btn = document.querySelector(`[data-colors="${colorCount}"]`);
+                if (btn && color.price > 0) {
+                    btn.innerHTML = `${color.name}<br><span class="text-xs text-gray-600">+R$ ${parseFloat(color.price).toFixed(2).replace('.', ',')}</span>`;
+                }
+            });
+        }
+
+        function renderSizeButtons() {
+            const container = document.getElementById('size-buttons');
+            container.innerHTML = sizes.map(size => `
+                <button type="button" onclick="openModal(${size.id})" 
+                        class="p-4 border-2 border-gray-300 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition text-center">
+                    <div class="font-bold text-lg">${size.name}</div>
+                    <div class="text-sm text-gray-600">${size.dimensions}</div>
+                    <div class="text-xs text-indigo-600 mt-2" id="price-${size.id}">Carregando...</div>
+                </button>
+            `).join('');
+
+            sizes.forEach(size => {
+                fetch(`/api/sublimation-price/${size.id}/${totalShirts}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        document.getElementById(`price-${size.id}`).textContent = 
+                            `R$ ${parseFloat(data.price).toFixed(2).replace('.', ',')}`;
+                    });
+            });
+        }
+
+        function renderLocationOptions() {
+            const select = document.getElementById('modal-location');
+            select.innerHTML = '<option value="">Selecione</option>' + 
+                locations.map(loc => `<option value="${loc.id}">${loc.name}</option>`).join('');
+        }
+
+        function openModal(sizeId) {
+            currentSize = sizes.find(s => s.id === sizeId);
+            document.getElementById('modal-size-name').textContent = `${currentSize.name} (${currentSize.dimensions})`;
+            document.getElementById('modal-quantity').value = 1;
+            document.getElementById('modal-color-count').value = 1;
+            document.getElementById('modal-has-neon').checked = false;
+            selectedColorCount = 1;
+            
+            // Reset color buttons
+            document.querySelectorAll('.color-btn').forEach(btn => {
+                btn.classList.remove('border-indigo-600', 'bg-indigo-50');
+            });
+            document.querySelector('[data-colors="1"]').classList.add('border-indigo-600', 'bg-indigo-50');
+            
+            fetch(`/api/sublimation-price/${sizeId}/${totalShirts}`)
+                .then(r => r.json())
+                .then(data => {
+                    currentSize.price = parseFloat(data.price);
+                    updateModalPrices();
+                });
+
+            document.getElementById('application-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('application-modal').classList.add('hidden');
+            document.getElementById('modal-location').value = '';
+            document.getElementById('modal-quantity').value = 1;
+        }
+
+        function selectColorCount(count) {
+            selectedColorCount = count;
+            document.getElementById('modal-color-count').value = count;
+            
+            // Update button styles
+            document.querySelectorAll('.color-btn').forEach(btn => {
+                btn.classList.remove('border-indigo-600', 'bg-indigo-50');
+            });
+            document.querySelector(`[data-colors="${count}"]`).classList.add('border-indigo-600', 'bg-indigo-50');
+            
+            updateModalPrices();
+        }
+
+        function updateModalPrices() {
+            const quantity = parseInt(document.getElementById('modal-quantity').value) || 1;
+            const hasNeon = document.getElementById('modal-has-neon').checked;
+            const basePrice = currentSize.price;
+            
+            // Buscar preço das cores selecionadas
+            const colorData = colors.find(c => c.id === selectedColorCount);
+            const colorPrice = colorData ? parseFloat(colorData.price) : 0;
+            
+            // Calcular acréscimo neon (50% do valor base do tamanho)
+            const neonSurcharge = hasNeon ? (basePrice * 0.5) : 0;
+            
+            // Preço unitário = base + cores + neon
+            const unitPrice = basePrice + colorPrice + neonSurcharge;
+            const subtotal = unitPrice * quantity;
+
+            document.getElementById('modal-base-price').textContent = `R$ ${(basePrice + colorPrice).toFixed(2).replace('.', ',')}`;
+            
+            if (hasNeon) {
+                document.getElementById('neon-info').style.display = 'block';
+                document.getElementById('modal-neon-price').textContent = `R$ ${neonSurcharge.toFixed(2).replace('.', ',')}`;
+            } else {
+                document.getElementById('neon-info').style.display = 'none';
+            }
+            
+            document.getElementById('modal-unit-price').textContent = `R$ ${unitPrice.toFixed(2).replace('.', ',')}`;
+            document.getElementById('modal-subtotal').textContent = `R$ ${subtotal.toFixed(2).replace('.', ',')}`;
+        }
+
+        document.getElementById('modal-quantity').addEventListener('input', updateModalPrices);
+
+        function previewCoverImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('cover-preview-img').src = e.target.result;
+                    document.getElementById('cover-preview').classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function displayFileList() {
+            const fileInput = document.getElementById('art_files');
+            const fileList = document.getElementById('file-list');
+            const files = Array.from(fileInput.files);
+
+            if (files.length === 0) {
+                fileList.innerHTML = '';
+                return;
+            }
+
+            fileList.innerHTML = files.map((file) => `
+                <div class="flex items-center justify-between p-2 bg-gray-50 rounded border">
+                    <div class="flex items-center space-x-2">
+                        <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                        </svg>
+                        <div>
+                            <div class="text-sm font-medium">${file.name}</div>
+                            <div class="text-xs text-gray-500">${(file.size / 1024).toFixed(2)} KB</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function addApplication() {
+            const locationId = parseInt(document.getElementById('modal-location').value);
+            const quantity = parseInt(document.getElementById('modal-quantity').value);
+            const colorCount = selectedColorCount;
+            const hasNeon = document.getElementById('modal-has-neon').checked;
+
+            if (!locationId || !quantity || !colorCount) {
+                alert('Por favor, preencha todos os campos.');
+                return;
+            }
+
+            const location = locations.find(l => l.id === locationId);
+            const basePrice = currentSize.price;
+            
+            // Buscar preço das cores
+            const colorData = colors.find(c => c.id === colorCount);
+            const colorPrice = colorData ? parseFloat(colorData.price) : 0;
+            
+            // Calcular neon (50% do valor base do tamanho)
+            const neonSurcharge = hasNeon ? (basePrice * 0.5) : 0;
+            
+            // Preço unitário = base + cores + neon
+            const unitPrice = basePrice + colorPrice + neonSurcharge;
+
+            applications.push({
+                size_id: currentSize.id,
+                size_name: currentSize.name,
+                size_dimensions: currentSize.dimensions,
+                location_id: locationId,
+                location_name: location.name,
+                quantity: quantity,
+                color_count: colorCount,
+                has_neon: hasNeon,
+                neon_surcharge: neonSurcharge,
+                unit_price: unitPrice
+            });
+
+            closeModal();
+            renderApplications();
+            calculatePrices();
+        }
+
+        function removeApplication(index) {
+            applications.splice(index, 1);
+            renderApplications();
+            calculatePrices();
+        }
+
+        function renderApplications() {
+            const container = document.getElementById('applications-list');
+            const noApps = document.getElementById('no-applications');
+
+            if (!container || !noApps) return;
+
+            if (applications.length === 0) {
+                noApps.style.display = 'block';
+                container.innerHTML = '';
+                return;
+            }
+
+            noApps.style.display = 'none';
+            
+            const html = applications.map((app, index) => `
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
+                    <div class="flex-1">
+                        <div class="font-medium">${app.location_name}: ${app.quantity}x ${app.size_name} (${app.size_dimensions}) - ${app.color_count} ${app.color_count === 1 ? 'Cor' : 'Cores'}${app.has_neon ? ' + Neon' : ''}</div>
+                        <div class="text-sm text-gray-600">R$ ${app.unit_price.toFixed(2).replace('.', ',')} cada</div>
+                    </div>
+                    <button type="button" onclick="removeApplication(${index})" 
+                            class="text-red-600 hover:text-red-800 px-3 py-1">
+                        Remover
+                    </button>
+                </div>
+            `).join('');
+            
+            container.innerHTML = html;
+        }
+
+        function calculatePrices() {
+            if (applications.length === 0) {
+                document.getElementById('price-breakdown').innerHTML = '<p class="text-gray-500 text-sm">Nenhuma aplicação adicionada.</p>';
+                document.getElementById('total-price').textContent = 'R$ 0,00';
+                document.getElementById('sublimations-data').value = '';
+                return;
+            }
+
+            // Calcular subtotais
+            const items = applications.map(app => ({
+                ...app,
+                subtotal: app.unit_price * app.quantity
+            }));
+
+            // Ordenar por subtotal (maior primeiro)
+            items.sort((a, b) => b.subtotal - a.subtotal);
+
+            // Aplicar desconto: se >= 3 aplicações, 2 primeiras integrais, demais 50% off
+            let total = 0;
+            const breakdown = items.map((item, index) => {
+                let discount = 0;
+                if (applications.length >= 3 && index >= 2) {
+                    discount = 50;
+                }
+                
+                const finalPrice = item.subtotal * (1 - discount / 100);
+                total += finalPrice;
+
+                item.discount_percent = discount;
+                item.final_price = finalPrice;
+
+                return `
+                    <div class="flex justify-between">
+                        <span>${item.location_name} - ${item.quantity}x ${item.size_name} (${item.color_count} ${item.color_count === 1 ? 'cor' : 'cores'}${item.has_neon ? ' + neon' : ''})${discount > 0 ? ` (-${discount}%)` : ''}</span>
+                        <span class="${discount > 0 ? 'text-green-600' : ''}">R$ ${finalPrice.toFixed(2).replace('.', ',')}</span>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('price-breakdown').innerHTML = breakdown;
+            document.getElementById('total-price').textContent = `R$ ${total.toFixed(2).replace('.', ',')}`;
+
+            // Atualizar campo hidden com dados das aplicações
+            document.getElementById('sublimations-data').value = JSON.stringify(items);
+        }
+    </script>
+</body>
+</html>
