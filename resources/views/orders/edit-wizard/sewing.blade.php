@@ -261,7 +261,7 @@
                                         </svg>
                                     </div>
                                     <h2 class="text-sm font-medium text-gray-900">Imagem de Capa do Item</h2>
-                                </div>
+                                        </div>
 
                                 <div class="bg-gray-50 rounded-md p-4">
                                     <div class="flex items-center justify-center w-full">
@@ -411,6 +411,11 @@
 
         // Inicializar a página
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('=== INICIALIZANDO PÁGINA ===');
+            console.log('Current items:', currentItems);
+            console.log('Items array:', items);
+            console.log('Product options:', productOptions);
+            
             loadProductOptions();
             updateItemsList();
             updateSummary();
@@ -678,10 +683,15 @@
         }
 
         function updateItemsList() {
+            console.log('=== ATUALIZANDO LISTA DE ITENS ===');
+            console.log('Items to display:', items);
+            console.log('Items count:', items.length);
+            
             const container = document.getElementById('items-list');
             container.innerHTML = '';
 
             items.forEach((item, index) => {
+                console.log(`Processando item ${index}:`, item);
                 const itemElement = document.createElement('div');
                 itemElement.className = 'bg-gray-50 rounded-lg p-4 border-l-4 border-indigo-400';
                 itemElement.innerHTML = `
