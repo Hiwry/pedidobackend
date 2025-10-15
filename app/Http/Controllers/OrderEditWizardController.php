@@ -374,7 +374,7 @@ class OrderEditWizardController extends Controller
 
             DB::commit();
 
-            return redirect()->route('orders.show', $order->id)
+            return redirect()->route('orders.show', ['id' => $order->id, 't' => time()])
                 ->with('success', $message)
                 ->with('refresh', true);
 
@@ -579,6 +579,13 @@ class OrderEditWizardController extends Controller
                 if ($item->unit_price != $itemData['unit_price']) {
                     $itemChanges['unit_price'] = ['old' => $item->unit_price, 'new' => $itemData['unit_price']];
                     $item->unit_price = $itemData['unit_price'];
+                }
+                
+                // Recalcular total_price se quantidade ou preço mudaram
+                $newTotalPrice = $item->quantity * $item->unit_price;
+                if ($item->total_price != $newTotalPrice) {
+                    $itemChanges['total_price'] = ['old' => $item->total_price, 'new' => $newTotalPrice];
+                    $item->total_price = $newTotalPrice;
                 }
                 
                 if (!empty($itemChanges)) {
