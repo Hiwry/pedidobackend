@@ -354,6 +354,27 @@
                         </div>
                         
                         <div id="items-list" class="space-y-4">
+                            <!-- Teste direto - Item estático -->
+                            <div class="bg-gray-50 rounded-lg p-4 border-l-4 border-indigo-400">
+                                <div class="flex justify-between items-start mb-2">
+                                    <h3 class="font-semibold text-indigo-600">Item 1 (Teste)</h3>
+                                    <div class="flex gap-2">
+                                        <button class="text-blue-600 hover:text-blue-800 text-sm">✏️</button>
+                                        <button class="text-red-600 hover:text-red-800 text-sm">🗑️</button>
+                                    </div>
+                                </div>
+                                <div class="text-sm text-gray-600 space-y-1">
+                                    <p><strong>Personalização:</strong> SERIGRAFIA</p>
+                                    <p><strong>Tecido:</strong> Poliéster - DRY FIT</p>
+                                    <p><strong>Cor:</strong> Branco</p>
+                                    <p><strong>Gola:</strong> Gola Polo</p>
+                                    <p><strong>Modelo:</strong> Babylook</p>
+                                    <p><strong>Detalhe:</strong> Ribana</p>
+                                    <p><strong>Quantidade:</strong> 10 peças</p>
+                                    <p><strong>Valor Unit.:</strong> R$ 13,00</p>
+                                    <p><strong>Total:</strong> R$ 130,00</p>
+                                </div>
+                            </div>
                             <!-- Itens serão adicionados aqui via JavaScript -->
                         </div>
 
