@@ -273,27 +273,48 @@
                 },
 
                 saveItem() {
+                    console.log('=== SALVANDO ITEM ===');
+                    console.log('Editing index:', this.editingIndex);
+                    console.log('Current item:', this.currentItem);
+                    console.log('Items before:', JSON.stringify(this.items, null, 2));
+                    
                     if (this.editingIndex !== null) {
                         // Atualizar item existente
+                        console.log('Atualizando item existente no índice:', this.editingIndex);
                         this.items[this.editingIndex] = { ...this.currentItem };
                         this.editingIndex = null;
                     } else {
                         // Adicionar novo item
+                        console.log('Adicionando novo item');
                         this.items.push({ ...this.currentItem });
                     }
+                    
+                    console.log('Items after:', JSON.stringify(this.items, null, 2));
                     
                     this.resetForm();
                     this.updateServerData();
                 },
 
                 editItem(index) {
+                    console.log('=== EDITANDO ITEM ===');
+                    console.log('Index:', index);
+                    console.log('Item to edit:', this.items[index]);
+                    
                     this.currentItem = { ...this.items[index] };
                     this.editingIndex = index;
+                    
+                    console.log('Current item set to:', this.currentItem);
+                    console.log('Editing index set to:', this.editingIndex);
                 },
 
                 removeItem(index) {
+                    console.log('=== REMOVENDO ITEM ===');
+                    console.log('Index to remove:', index);
+                    console.log('Item to remove:', this.items[index]);
+                    
                     if (confirm('Tem certeza que deseja remover este item?')) {
                         this.items.splice(index, 1);
+                        console.log('Item removido. Items restantes:', this.items);
                         this.updateServerData();
                     }
                 },
@@ -315,6 +336,9 @@
                 },
 
                 updateServerData() {
+                    console.log('=== ATUALIZANDO DADOS NO SERVIDOR ===');
+                    console.log('Items to send:', JSON.stringify(this.items, null, 2));
+                    
                     // Enviar dados atualizados para o servidor via AJAX
                     fetch('{{ route("orders.edit-wizard.sewing") }}', {
                         method: 'POST',
@@ -327,14 +351,21 @@
                             items: this.items
                         })
                     })
-                    .then(response => response.json())
+                    .then(response => {
+                        console.log('Response status:', response.status);
+                        console.log('Response headers:', response.headers);
+                        return response.json();
+                    })
                     .then(data => {
+                        console.log('Response data:', data);
                         if (data.success) {
-                            console.log('Itens atualizados no servidor');
+                            console.log('✅ Itens atualizados no servidor com sucesso');
+                        } else {
+                            console.error('❌ Erro na resposta do servidor:', data);
                         }
                     })
                     .catch(error => {
-                        console.error('Erro ao atualizar itens:', error);
+                        console.error('❌ Erro ao atualizar itens:', error);
                     });
                 },
 

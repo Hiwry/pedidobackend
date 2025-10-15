@@ -123,31 +123,70 @@ class OrderEditWizardController extends Controller
 
     public function sewing(Request $request)
     {
+        \Log::info('=== INÍCIO MÉTODO SEWING ===', [
+            'method' => $request->method(),
+            'url' => $request->url(),
+            'is_ajax' => $request->ajax(),
+            'wants_json' => $request->wantsJson(),
+            'all_input' => $request->all()
+        ]);
+
         $editData = session('edit_order_data', []);
         $orderId = session('edit_order_id');
 
+        \Log::info('Dados da sessão', [
+            'order_id' => $orderId,
+            'edit_data' => $editData
+        ]);
+
         if (!$orderId) {
+            \Log::warning('Sessão de edição expirada');
             return redirect()->route('orders.index')->with('error', 'Sessão de edição expirada.');
         }
 
         $order = Order::findOrFail($orderId);
+        \Log::info('Pedido carregado', [
+            'order_id' => $order->id,
+            'items_count' => $order->items->count()
+        ]);
 
         if ($request->isMethod('post')) {
             $action = $request->input('action');
             
             // Verificar se é uma requisição AJAX
             if ($request->wantsJson() || $request->ajax()) {
+                \Log::info('Requisição AJAX detectada', [
+                    'action' => $action,
+                    'content_type' => $request->header('Content-Type'),
+                    'accept' => $request->header('Accept')
+                ]);
+
                 if ($action === 'update_items') {
                     $items = $request->input('items', []);
                     
+                    \Log::info('Atualizando itens via AJAX', [
+                        'items_count' => count($items),
+                        'items_data' => $items
+                    ]);
+                    
                     $editData['items'] = $items;
                     session(['edit_order_data' => $editData]);
+                    
+                    \Log::info('Itens salvos na sessão', [
+                        'session_edit_data' => session('edit_order_data')
+                    ]);
                     
                     return response()->json(['success' => true, 'message' => 'Itens atualizados com sucesso']);
                 }
             }
             
+            \Log::info('Processando ação normal', [
+                'action' => $action,
+                'edit_data_before' => $editData
+            ]);
+
             if ($action === 'add_item') {
+                \Log::info('Adicionando novo item');
                 $validated = $request->validate([
                     'print_type' => 'required|string|max:255',
                     'art_name' => 'nullable|string|max:255',
@@ -177,6 +216,7 @@ class OrderEditWizardController extends Controller
                 return redirect()->back()->with('success', 'Item adicionado com sucesso!');
                 
             } elseif ($action === 'update_item') {
+                \Log::info('Atualizando item existente');
                 $validated = $request->validate([
                     'editing_item_id' => 'required|integer',
                     'print_type' => 'required|string|max:255',
@@ -230,11 +270,17 @@ class OrderEditWizardController extends Controller
                 return redirect()->back()->with('success', 'Item removido com sucesso!');
                 
             } elseif ($action === 'finish') {
+                \Log::info('Finalizando etapa de costura');
                 return redirect()->route('orders.edit-wizard.customization');
             }
         }
 
-        return view('orders.wizard.sewing', compact('order', 'editData'));
+        \Log::info('Retornando view de costura', [
+            'edit_data_final' => $editData,
+            'order_items_count' => $order->items->count()
+        ]);
+
+        return view('orders.edit-wizard.sewing', compact('order', 'editData'));
     }
 
     public function customization(Request $request)
