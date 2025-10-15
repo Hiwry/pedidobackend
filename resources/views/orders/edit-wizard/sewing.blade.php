@@ -235,21 +235,25 @@
         </div>
     </div>
 
+    @php
+        $itemsData = $order->items->map(function($item) {
+            return [
+                'id' => $item->id,
+                'print_type' => $item->print_type,
+                'art_name' => $item->art_name,
+                'quantity' => $item->quantity,
+                'fabric' => $item->fabric,
+                'color' => $item->color,
+                'unit_price' => $item->unit_price,
+                'total_price' => $item->total_price
+            ];
+        })->toArray();
+    @endphp
+
     <script>
         function editWizard() {
             return {
-                items: @json($order->items->map(function($item) {
-                    return [
-                        'id' => $item->id,
-                        'print_type' => $item->print_type,
-                        'art_name' => $item->art_name,
-                        'quantity' => $item->quantity,
-                        'fabric' => $item->fabric,
-                        'color' => $item->color,
-                        'unit_price' => $item->unit_price,
-                        'total_price' => $item->total_price
-                    ];
-                })),
+                items: @json($itemsData),
                 editingIndex: null,
                 currentItem: {
                     print_type: '',
