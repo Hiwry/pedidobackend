@@ -344,6 +344,15 @@
                     
                     <!-- Lista de Itens -->
                     <div class="p-6">
+                        <!-- Teste direto dos dados -->
+                        <div class="mb-4 p-3 bg-yellow-100 border border-yellow-300 rounded">
+                            <p class="text-sm text-yellow-800">
+                                <strong>Debug:</strong> 
+                                Itens carregados: {{ count($order->items) }} | 
+                                IDs: {{ $order->items->pluck('id')->join(', ') }}
+                            </p>
+                        </div>
+                        
                         <div id="items-list" class="space-y-4">
                             <!-- Itens serão adicionados aqui via JavaScript -->
                         </div>
