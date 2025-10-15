@@ -423,9 +423,13 @@
         });
 
         function loadProductOptions() {
+            console.log('=== CARREGANDO OPÇÕES DE PRODUTO ===');
+            console.log('Product options:', productOptions);
+            
             // Carregar opções de personalização
             const personalizacaoContainer = document.getElementById('personalizacao-options');
             if (productOptions.personalizacao) {
+                console.log('Carregando personalizações:', productOptions.personalizacao);
                 productOptions.personalizacao.forEach(option => {
                     const checkbox = document.createElement('div');
                     checkbox.className = 'flex items-center';
@@ -435,6 +439,8 @@
                     `;
                     personalizacaoContainer.appendChild(checkbox);
                 });
+            } else {
+                console.log('Nenhuma opção de personalização encontrada');
             }
 
             // Carregar outras opções
