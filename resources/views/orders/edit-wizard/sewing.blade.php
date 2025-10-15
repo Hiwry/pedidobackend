@@ -250,7 +250,7 @@
                                         <p class="text-sm text-gray-600">Total de peças: <span id="total-quantity">0</span></p>
                                     </div>
                                 </div>
-                            </div>
+                                        </div>
 
                             <!-- Seção: Imagem de Capa do Item -->
                             <div class="space-y-3">
@@ -416,9 +416,16 @@
             console.log('Items array:', items);
             console.log('Product options:', productOptions);
             
+            // Teste simples - forçar exibição dos itens
+            if (items.length > 0) {
+                console.log('✅ Itens encontrados, forçando exibição...');
+                updateItemsList();
+                updateSummary();
+            } else {
+                console.log('❌ Nenhum item encontrado');
+            }
+            
             loadProductOptions();
-            updateItemsList();
-            updateSummary();
             setupEventListeners();
         });
 
@@ -694,7 +701,19 @@
             console.log('Items count:', items.length);
             
             const container = document.getElementById('items-list');
+            console.log('Container encontrado:', container);
+            
+            if (!container) {
+                console.error('❌ Container items-list não encontrado!');
+                return;
+            }
+            
             container.innerHTML = '';
+
+            if (items.length === 0) {
+                console.log('Nenhum item para exibir');
+                return;
+            }
 
             items.forEach((item, index) => {
                 console.log(`Processando item ${index}:`, item);
@@ -729,7 +748,10 @@
                     </div>
                 `;
                 container.appendChild(itemElement);
+                console.log(`✅ Item ${index + 1} adicionado ao DOM`);
             });
+            
+            console.log(`✅ Total de ${items.length} itens exibidos no DOM`);
         }
 
         function updateSummary() {
