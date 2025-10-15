@@ -135,6 +135,18 @@ class OrderEditWizardController extends Controller
         if ($request->isMethod('post')) {
             $action = $request->input('action');
             
+            // Verificar se é uma requisição AJAX
+            if ($request->wantsJson() || $request->ajax()) {
+                if ($action === 'update_items') {
+                    $items = $request->input('items', []);
+                    
+                    $editData['items'] = $items;
+                    session(['edit_order_data' => $editData]);
+                    
+                    return response()->json(['success' => true, 'message' => 'Itens atualizados com sucesso']);
+                }
+            }
+            
             if ($action === 'add_item') {
                 $validated = $request->validate([
                     'print_type' => 'required|string|max:255',
