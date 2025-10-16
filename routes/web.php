@@ -50,7 +50,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/pedidos/{id}/solicitar-edicao', [\App\Http\Controllers\OrderController::class, 'requestEdit'])->name('orders.request-edit');
     Route::post('/pedidos/{id}/aprovar-edicao', [\App\Http\Controllers\OrderController::class, 'approveEdit'])->name('orders.approve-edit');
     Route::post('/pedidos/{id}/rejeitar-edicao', [\App\Http\Controllers\OrderController::class, 'rejectEdit'])->name('orders.reject-edit');
-    Route::get('/pedidos/{id}/editar', [\App\Http\Controllers\OrderController::class, 'editOrder'])->name('orders.edit');
+    Route::get('/pedidos/{id}/editar', [\App\Http\Controllers\OrderEditWizardController::class, 'start'])->name('orders.edit');
     Route::put('/pedidos/{id}/atualizar', [\App\Http\Controllers\OrderController::class, 'updateOrder'])->name('orders.update');
     
     // Wizard de Pedido (5 etapas)
@@ -65,6 +65,15 @@ Route::middleware('auth')->group(function () {
         Route::get('finalizar', function () {
             return redirect()->route('kanban.index')->with('info', 'Pedido já foi finalizado ou sessão expirou.');
         });
+    });
+
+    // Wizard de Edição de Pedido (5 etapas)
+    Route::prefix('pedidos')->group(function () {
+        Route::match(['get','post'],'editar/cliente', [\App\Http\Controllers\OrderEditWizardController::class, 'client'])->name('orders.edit-wizard.client');
+        Route::match(['get','post'],'editar/costura', [\App\Http\Controllers\OrderEditWizardController::class, 'sewing'])->name('orders.edit-wizard.sewing');
+        Route::match(['get','post'],'editar/personalizacao', [\App\Http\Controllers\OrderEditWizardController::class, 'customization'])->name('orders.edit-wizard.customization');
+        Route::match(['get','post'],'editar/pagamento', [\App\Http\Controllers\OrderEditWizardController::class, 'payment'])->name('orders.edit-wizard.payment');
+        Route::match(['get','post'],'editar/confirmacao', [\App\Http\Controllers\OrderEditWizardController::class, 'confirm'])->name('orders.edit-wizard.confirm');
     });
 
     // Kanban
@@ -98,7 +107,6 @@ Route::middleware('auth')->group(function () {
     // API Routes
     Route::prefix('api')->group(function () {
         Route::get('/clients/search', [\App\Http\Controllers\Api\ClientController::class, 'search']);
-        Route::get('/product-options', [\App\Http\Controllers\Api\ClientController::class, 'getProductOptions']);
         Route::get('/product-options-with-parents', [\App\Http\Controllers\Api\ClientController::class, 'getProductOptionsWithParents']);
         Route::get('/sublimation-sizes', [\App\Http\Controllers\Api\ClientController::class, 'getSublimationSizes']);
         Route::get('/sublimation-locations', [\App\Http\Controllers\Api\ClientController::class, 'getSublimationLocations']);
@@ -188,5 +196,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::post('edit-requests/{editRequest}/reject', [\App\Http\Controllers\OrderEditRequestController::class, 'reject'])->name('edit-requests.reject');
 });
 
+// API Routes para o wizard de edição (sem autenticação para funcionar no JavaScript)
+Route::get('/api/order-items/{id}', [\App\Http\Controllers\OrderEditWizardController::class, 'getItemData']);
+Route::get('/api/product-options', [\App\Http\Controllers\Api\ClientController::class, 'getProductOptions']);
+Route::get('/api/sublimation-price/{sizeId}/{quantity}', [\App\Http\Controllers\Api\ClientController::class, 'getSublimationPrice']);
+Route::get('/api/personalization-price', [\App\Http\Controllers\Api\PersonalizationPriceController::class, 'getPrice']);
 
 require __DIR__.'/auth.php';

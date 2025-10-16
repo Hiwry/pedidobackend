@@ -1,0 +1,16 @@
+deployment:
+  tasks:
+    # Define o caminho de deploy no cPanel
+    - export DEPLOYPATH=/home2/vestal30/public_html
+
+    # Copia os arquivos da pasta public (Laravel)
+    - /bin/cp -r public/* $DEPLOYPATH
+
+    # Copia a pasta vendor (dependências)
+    - /bin/cp -r vendor $DEPLOYPATH/vendor
+
+    # Copia o arquivo .env (configurações do Laravel)
+    - /bin/cp .env $DEPLOYPATH/.env
+
+    # Garante que o storage tenha permissão (opcional, alguns servidores não permitem)
+    - /bin/chmod -R 755 $DEPLOYPATH/storage

@@ -28,7 +28,7 @@
                     ← Voltar
                 </a>
                 @if(!$order->is_cancelled && !$order->has_pending_edit)
-                <a href="{{ route('orders.edit-wizard.start', $order->id) }}" 
+                <a href="{{ route('orders.edit', $order->id) }}" 
                    class="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 flex items-center space-x-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
@@ -105,9 +105,11 @@
                                     </svg>
                                     <span class="text-sm font-medium text-green-600">Confirmado</span>
                                 </div>
+                                @if($order->client_confirmed_at)
                                 <p class="text-xs text-gray-500 mt-1">
                                     {{ $order->client_confirmed_at->format('d/m/Y H:i') }}
                                 </p>
+                                @endif
                                 @else
                                 <div class="flex items-center mt-1">
                                     <svg class="w-4 h-4 text-orange-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -516,9 +518,12 @@
                                 </button>
                             </div>
                         </form>
-                    </div>
+                </div>
 
-                    <!-- Histórico de Transações -->
+                <!-- Histórico de Edições -->
+                <x-edit-history :order="$order" />
+
+                <!-- Histórico de Transações -->
                     @if($cashTransactions->count() > 0)
                     <div class="border-t pt-4 mt-4">
                         <h3 class="text-sm font-medium text-gray-700 mb-3">Histórico de Transações</h3>
@@ -533,7 +538,7 @@
                                         </span>
                                     </div>
                                     <div class="text-xs text-gray-500 mt-1">
-                                        {{ ucfirst($transaction->payment_method) }} • {{ $transaction->transaction_date->format('d/m/Y H:i') }}
+                                        {{ ucfirst($transaction->payment_method) }} • {{ $transaction->transaction_date ? $transaction->transaction_date->format('d/m/Y H:i') : 'Data não informada' }}
                                         @if($transaction->notes)
                                         <br>{{ $transaction->notes }}
                                         @endif
@@ -633,7 +638,9 @@
                         </div>
                         
                         <div class="mt-3 text-sm text-yellow-700">
+                            @if($order->edit_requested_at)
                             <p><strong>Solicitado em:</strong> {{ $order->edit_requested_at->format('d/m/Y H:i') }}</p>
+                            @endif
                             @if($order->edit_notes)
                             <p><strong>Motivo:</strong> {{ $order->edit_notes }}</p>
                             @endif
@@ -644,7 +651,7 @@
                             <p><strong>Rejeitado em:</strong> {{ $order->edit_rejected_at->format('d/m/Y H:i') }}</p>
                             <p><strong>Motivo da rejeição:</strong> {{ $order->edit_rejection_reason }}</p>
                             @endif
-                            @if($order->is_modified)
+                            @if($order->is_modified && $order->last_modified_at)
                             <p><strong>Última modificação:</strong> {{ $order->last_modified_at->format('d/m/Y H:i') }}</p>
                             @endif
                         </div>
@@ -769,14 +776,20 @@
                                                         </div>
                                                     @endforeach
                                                 @else
-                                                    @foreach($sectionChanges as $field => $change)
+                                                    @if(is_array($sectionChanges))
+                                                        @foreach($sectionChanges as $field => $change)
+                                                            <div class="ml-4 mb-1">
+                                                                <span class="font-medium">{{ ucfirst(str_replace('_', ' ', $field)) }}:</span>
+                                                                <span class="text-red-600 line-through">{{ $change['old'] ?? 'N/A' }}</span>
+                                                                <span class="text-gray-500">→</span>
+                                                                <span class="text-green-600">{{ $change['new'] ?? 'N/A' }}</span>
+                                                            </div>
+                                                        @endforeach
+                                                    @else
                                                         <div class="ml-4 mb-1">
-                                                            <span class="font-medium">{{ ucfirst(str_replace('_', ' ', $field)) }}:</span>
-                                                            <span class="text-red-600 line-through">{{ $change['old'] ?? 'N/A' }}</span>
-                                                            <span class="text-gray-500">→</span>
-                                                            <span class="text-green-600">{{ $change['new'] ?? 'N/A' }}</span>
+                                                            <span class="text-gray-600">{{ $sectionChanges }}</span>
                                                         </div>
-                                                    @endforeach
+                                                    @endif
                                                 @endif
                                             </div>
                                         @endforeach
@@ -840,7 +853,7 @@
                             <span class="text-xs text-gray-500">{{ $request->created_at->format('d/m/Y') }}</span>
                         </div>
                         <p class="text-xs text-gray-700">
-                            <strong>Nova data:</strong> {{ $request->requested_delivery_date->format('d/m/Y') }}
+                            <strong>Nova data:</strong> {{ $request->requested_delivery_date ? $request->requested_delivery_date->format('d/m/Y') : 'Data não informada' }}
                         </p>
                         <p class="text-xs text-gray-600 mt-1">{{ $request->reason }}</p>
                     </div>

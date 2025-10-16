@@ -6,9 +6,11 @@ use App\Models\Order;
 use App\Models\Client;
 use App\Models\OrderItem;
 use App\Models\OrderLog;
+use App\Models\OrderEditHistory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class OrderEditWizardController extends Controller
 {
@@ -63,222 +65,66 @@ class OrderEditWizardController extends Controller
             return redirect()->route('orders.index')->with('error', 'Sessão de edição expirada.');
         }
 
-        $order = Order::findOrFail($orderId);
+        $order = Order::with('client')->findOrFail($orderId);
 
         if ($request->isMethod('post')) {
             $validated = $request->validate([
+                'client_id' => 'nullable|exists:clients,id',
                 'name' => 'required|string|max:255',
-                'phone_primary' => [
-                    'required',
-                    'string',
-                    'max:50',
-                    'regex:/^\(\d{2}\)\s\d{4,5}-\d{4}$/'
-                ],
-                'phone_secondary' => [
-                    'nullable',
-                    'string',
-                    'max:50',
-                    'regex:/^\(\d{2}\)\s\d{4,5}-\d{4}$/'
-                ],
+                'phone_primary' => 'required|string|max:50',
+                'phone_secondary' => 'nullable|string|max:50',
                 'email' => 'nullable|email|max:255',
-                'cpf_cnpj' => [
-                    'nullable',
-                    'string',
-                    'max:20',
-                    function ($attribute, $value, $fail) {
-                        if (!empty($value)) {
-                            $cpfPattern = '/^\d{3}\.\d{3}\.\d{3}-\d{2}$/';
-                            $cnpjPattern = '/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/';
-                            
-                            if (!preg_match($cpfPattern, $value) && !preg_match($cnpjPattern, $value)) {
-                                $fail('O campo :attribute deve ter o formato de CPF (000.000.000-00) ou CNPJ (00.000.000/0000-00).');
-                            }
-                        }
-                    }
-                ],
-                'address' => 'nullable|string|max:500',
+                'cpf_cnpj' => 'nullable|string|max:20',
+                'address' => 'nullable|string|max:255',
                 'city' => 'nullable|string|max:100',
                 'state' => 'nullable|string|max:2',
-                'zip_code' => [
-                    'nullable',
-                    'string',
-                    'max:12',
-                    'regex:/^\d{5}-\d{3}$/'
-                ],
+                'zip_code' => 'nullable|string|max:12',
                 'category' => 'nullable|string|max:50',
-            ], [
-                'phone_primary.regex' => 'O telefone principal deve ter o formato (00) 00000-0000.',
-                'phone_secondary.regex' => 'O telefone secundário deve ter o formato (00) 00000-0000.',
-                'zip_code.regex' => 'O CEP deve ter o formato 00000-000.',
             ]);
 
+            // Atualizar dados do cliente na sessão
             $editData['client'] = $validated;
             session(['edit_order_data' => $editData]);
+
+            // Log da edição
+            $this->logEdit('client', 'Dados do cliente atualizados', $validated);
 
             return redirect()->route('orders.edit-wizard.sewing');
         }
 
-        return view('orders.wizard.client', compact('order', 'editData'));
+        return view('orders.edit-wizard.client', compact('order', 'editData'));
     }
 
     public function sewing(Request $request)
     {
-        \Log::info('=== INÍCIO MÉTODO SEWING ===', [
-            'method' => $request->method(),
-            'url' => $request->url(),
-            'is_ajax' => $request->ajax(),
-            'wants_json' => $request->wantsJson(),
-            'all_input' => $request->all()
-        ]);
-
         $editData = session('edit_order_data', []);
         $orderId = session('edit_order_id');
 
-        \Log::info('Dados da sessão', [
-            'order_id' => $orderId,
-            'edit_data' => $editData
-        ]);
-
         if (!$orderId) {
-            \Log::warning('Sessão de edição expirada');
             return redirect()->route('orders.index')->with('error', 'Sessão de edição expirada.');
         }
 
-        $order = Order::findOrFail($orderId);
-        \Log::info('Pedido carregado', [
-            'order_id' => $order->id,
-            'items_count' => $order->items->count()
-        ]);
+        $order = Order::with('items')->findOrFail($orderId);
+        
+        // Recarregar os dados do pedido para garantir que estão atualizados
+        $order->refresh();
+        $order->load('items');
 
         if ($request->isMethod('post')) {
-            $action = $request->input('action');
-            
-            // Verificar se é uma requisição AJAX
-            if ($request->wantsJson() || $request->ajax()) {
-                \Log::info('Requisição AJAX detectada', [
-                    'action' => $action,
-                    'content_type' => $request->header('Content-Type'),
-                    'accept' => $request->header('Accept')
-                ]);
-
-                if ($action === 'update_items') {
-                    $items = $request->input('items', []);
-                    
-                    \Log::info('Atualizando itens via AJAX', [
-                        'items_count' => count($items),
-                        'items_data' => $items
-                    ]);
-                    
-                    $editData['items'] = $items;
-                    session(['edit_order_data' => $editData]);
-                    
-                    \Log::info('Itens salvos na sessão', [
-                        'session_edit_data' => session('edit_order_data')
-                    ]);
-                    
-                    return response()->json(['success' => true, 'message' => 'Itens atualizados com sucesso']);
-                }
-            }
-            
-            \Log::info('Processando ação normal', [
-                'action' => $action,
-                'edit_data_before' => $editData
-            ]);
+            $action = $request->input('action', 'add');
 
             if ($action === 'add_item') {
-                \Log::info('Adicionando novo item');
-                $validated = $request->validate([
-                    'print_type' => 'required|string|max:255',
-                    'art_name' => 'nullable|string|max:255',
-                    'quantity' => 'required|integer|min:1',
-                    'fabric' => 'required|string|max:255',
-                    'color' => 'required|string|max:100',
-                    'unit_price' => 'required|numeric|min:0',
-                    'collar' => 'nullable|string|max:255',
-                    'model' => 'nullable|string|max:255',
-                    'detail' => 'nullable|string|max:255',
-                    'tipo_tecido' => 'nullable|string|max:255',
-                ]);
-
-                // Adicionar novo item aos dados de edição
-                if (!isset($editData['items'])) {
-                    $editData['items'] = [];
-                }
-                
-                $newItem = array_merge($validated, [
-                    'item_number' => count($editData['items']) + 1,
-                    'total_price' => $validated['quantity'] * $validated['unit_price']
-                ]);
-                
-                $editData['items'][] = $newItem;
-                session(['edit_order_data' => $editData]);
-
-                return redirect()->back()->with('success', 'Item adicionado com sucesso!');
-                
+                return $this->addItem($request);
             } elseif ($action === 'update_item') {
-                \Log::info('Atualizando item existente');
-                $validated = $request->validate([
-                    'editing_item_id' => 'required|integer',
-                    'print_type' => 'required|string|max:255',
-                    'art_name' => 'nullable|string|max:255',
-                    'quantity' => 'required|integer|min:1',
-                    'fabric' => 'required|string|max:255',
-                    'color' => 'required|string|max:100',
-                    'unit_price' => 'required|numeric|min:0',
-                    'collar' => 'nullable|string|max:255',
-                    'model' => 'nullable|string|max:255',
-                    'detail' => 'nullable|string|max:255',
-                    'tipo_tecido' => 'nullable|string|max:255',
-                ]);
-
-                $itemId = $validated['editing_item_id'];
-                unset($validated['editing_item_id']);
-
-                // Atualizar item nos dados de edição
-                if (!isset($editData['items'])) {
-                    $editData['items'] = [];
-                }
-                
-                $updatedItem = array_merge($validated, [
-                    'total_price' => $validated['quantity'] * $validated['unit_price']
-                ]);
-                
-                // Encontrar e atualizar o item
-                foreach ($editData['items'] as $index => $item) {
-                    if ($item['id'] == $itemId) {
-                        $editData['items'][$index] = array_merge($item, $updatedItem);
-                        break;
-                    }
-                }
-                
-                session(['edit_order_data' => $editData]);
-
-                return redirect()->back()->with('success', 'Item atualizado com sucesso!');
-                
-            } elseif ($action === 'delete_item') {
-                $itemId = $request->input('item_id');
-                
-                // Remover item dos dados de edição
-                if (isset($editData['items'])) {
-                    $editData['items'] = array_filter($editData['items'], function($item) use ($itemId) {
-                        return $item['id'] != $itemId;
-                    });
-                    $editData['items'] = array_values($editData['items']); // Reindexar array
-                    session(['edit_order_data' => $editData]);
-                }
-
-                return redirect()->back()->with('success', 'Item removido com sucesso!');
-                
+                return $this->updateItem($request);
             } elseif ($action === 'finish') {
-                \Log::info('Finalizando etapa de costura');
-                return redirect()->route('orders.edit-wizard.customization');
+                return $this->finishSewing($request);
+            } elseif ($action === 'delete_item') {
+                return $this->deleteItem($request);
             }
-        }
 
-        \Log::info('Retornando view de costura', [
-            'edit_data_final' => $editData,
-            'order_items_count' => $order->items->count()
-        ]);
+            return $this->addItem($request);
+        }
 
         return view('orders.edit-wizard.sewing', compact('order', 'editData'));
     }
@@ -292,21 +138,67 @@ class OrderEditWizardController extends Controller
             return redirect()->route('orders.index')->with('error', 'Sessão de edição expirada.');
         }
 
-        $order = Order::findOrFail($orderId);
+        $order = Order::with(['items.sublimations', 'items.files'])->findOrFail($orderId);
+        
+        // Carregar dados de personalização existentes se não estiverem na sessão
+        if (!isset($editData['personalization'])) {
+            $editData['personalization'] = [
+                'art_name' => $order->items->first()->art_name ?? '',
+                'sublimations' => []
+            ];
+            
+            // Carregar sublimações de todos os itens
+            foreach ($order->items as $item) {
+                foreach ($item->sublimations as $sublimation) {
+                    $editData['personalization']['sublimations'][] = [
+                        'item_id' => $item->id,
+                        'size_name' => $sublimation->size_name,
+                        'location_name' => $sublimation->location_name,
+                        'application_size' => $sublimation->application_size ?? '',
+                        'color_quantity' => $sublimation->color_quantity ?? 1,
+                        'quantity' => $sublimation->quantity,
+                        'unit_price' => $sublimation->unit_price,
+                        'subtotal' => $sublimation->final_price,
+                    ];
+                }
+            }
+            
+            // Log para debug
+            \Log::info('Sublimações carregadas:', $editData['personalization']['sublimations']);
+            
+            session(['edit_order_data' => $editData]);
+        }
 
         if ($request->isMethod('post')) {
             $validated = $request->validate([
-                'contract_type' => 'required|in:costura,personalizacao,ambos',
-                'seller' => 'nullable|string|max:255',
+                'art_name' => 'required|string|max:255',
+                'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+                'art_files' => 'nullable|array',
+                'art_files.*' => 'file|mimes:pdf,jpg,jpeg,png,ai,cdr|max:10240',
+                'sublimations' => 'required|string',
             ]);
 
-            $editData = array_merge($editData, $validated);
+            // Processar dados de personalização
+            $sublimations = json_decode($validated['sublimations'], true);
+            
+            $editData['personalization'] = [
+                'art_name' => $validated['art_name'],
+                'sublimations' => $sublimations,
+            ];
+
             session(['edit_order_data' => $editData]);
+
+            // Log da edição
+            $this->logEdit('personalization', 'Personalização atualizada', $validated);
 
             return redirect()->route('orders.edit-wizard.payment');
         }
 
-        return view('orders.wizard.customization', compact('order', 'editData'));
+        // Buscar dados para os selects da tabela personalization_prices para SERIGRAFIA
+        $sizes = \App\Models\PersonalizationPrice::getSizesForType('SERIGRAFIA');
+        $sublimationLocations = \App\Models\SublimationLocation::where('active', true)->orderBy('order')->get();
+        
+        return view('orders.edit-wizard.customization', compact('order', 'editData', 'sizes', 'sublimationLocations'));
     }
 
     public function payment(Request $request)
@@ -318,477 +210,451 @@ class OrderEditWizardController extends Controller
             return redirect()->route('orders.index')->with('error', 'Sessão de edição expirada.');
         }
 
-        $order = Order::findOrFail($orderId);
+        $order = Order::with(['client', 'items'])->findOrFail($orderId);
 
         if ($request->isMethod('post')) {
+            \Log::info('=== PROCESSANDO PAGAMENTO ===');
+            \Log::info('Dados recebidos:', $request->all());
+            
             $validated = $request->validate([
                 'delivery_date' => 'required|date',
                 'subtotal' => 'required|numeric|min:0',
                 'discount' => 'nullable|numeric|min:0',
                 'delivery_fee' => 'nullable|numeric|min:0',
                 'total' => 'required|numeric|min:0',
+                'payment_method' => 'required|string',
+                'entry_date' => 'required|date',
                 'notes' => 'nullable|string|max:1000',
             ]);
 
-            $editData = array_merge($editData, $validated);
+            \Log::info('Dados validados:', $validated);
+
+            // Atualizar dados de pagamento na sessão
+            $editData['payment'] = $validated;
             session(['edit_order_data' => $editData]);
 
-            return redirect()->route('orders.edit-wizard.confirm');
+            \Log::info('Dados salvos na sessão:', $editData['payment']);
+
+            // Log da edição
+            $this->logEdit('payment', 'Dados de pagamento atualizados', $validated);
+
+            return redirect()->route('orders.edit-wizard.confirm')->with('success', 'Dados de pagamento atualizados com sucesso!');
         }
 
-        return view('orders.wizard.payment', compact('order', 'editData'));
+        return view('orders.edit-wizard.payment', compact('order', 'editData'));
     }
 
-    public function confirm()
+    public function confirm(Request $request)
     {
-        $editData = session('edit_order_data', []);
-        $orderId = session('edit_order_id');
-
-        if (!$orderId) {
-            return redirect()->route('orders.index')->with('error', 'Sessão de edição expirada.');
-        }
-
-        $order = Order::findOrFail($orderId);
-
-        return view('orders.wizard.confirm', compact('order', 'editData'));
-    }
-
-    public function finalize(Request $request)
-    {
-        $editData = session('edit_order_data', []);
-        $orderId = session('edit_order_id');
-
-        if (!$orderId) {
-            return redirect()->route('orders.index')->with('error', 'Sessão de edição expirada.');
-        }
-
-        $request->validate([
-            'edit_reason' => 'required|string|max:1000',
-        ]);
-
-        $order = Order::findOrFail($orderId);
-
-        // Verificar se o pedido ainda pode ser editado
-        if ($order->is_cancelled) {
-            return redirect()->route('orders.index')->with('error', 'Este pedido foi cancelado e não pode ser editado.');
-        }
-
-        if ($order->has_pending_edit) {
-            return redirect()->route('orders.index')->with('error', 'Já existe uma solicitação de edição pendente para este pedido.');
-        }
-
-        // Verificar se o usuário é administrador
-        $isAdmin = Auth::user()->isAdmin();
+        \Log::info('=== ETAPA DE CONFIRMAÇÃO ===');
+        \Log::info('Método da requisição:', $request->method());
+        \Log::info('Dados da sessão:', session('edit_order_data', []));
         
-        \Log::info('Verificação de administrador', [
-            'user_id' => Auth::id(),
-            'user_name' => Auth::user()->name,
-            'user_role' => Auth::user()->role,
-            'is_admin' => $isAdmin
-        ]);
+        $editData = session('edit_order_data', []);
+        $orderId = session('edit_order_id');
 
-        DB::beginTransaction();
+        if (!$orderId) {
+            return redirect()->route('orders.index')->with('error', 'Sessão de edição expirada.');
+        }
+
+        $order = Order::with(['client', 'items', 'payments'])->findOrFail($orderId);
+
+        if ($request->isMethod('post')) {
+            \Log::info('POST recebido na confirmação, chamando finalizeEdit...');
+            return $this->finalizeEdit($request);
+        }
+
+        \Log::info('Exibindo página de confirmação...');
+        return view('orders.edit-wizard.confirm', compact('order', 'editData'));
+    }
+
+    public function finalizeEdit(Request $request)
+    {
+        \Log::info('=== FINALIZANDO EDIÇÃO ===');
+        \Log::info('Dados da sessão:', session('edit_order_data', []));
+        
+        $editData = session('edit_order_data', []);
+        $orderId = session('edit_order_id');
+
+        if (!$orderId) {
+            return redirect()->route('orders.index')->with('error', 'Sessão de edição expirada.');
+        }
+
+        $order = Order::findOrFail($orderId);
+        \Log::info('Pedido encontrado:', $order->toArray());
+
         try {
-            if ($isAdmin) {
-                // Edição direta para administradores
-                \Log::info('Aplicando edição direta para administrador');
-                $this->applyChangesDirectly($order, $editData, $request->edit_reason);
-                
-                $message = 'Pedido editado com sucesso!';
-            } else {
-                // Criar solicitação de edição para usuários normais
-                $editRequest = \App\Models\OrderEditRequest::create([
-                    'order_id' => $order->id,
-                    'user_id' => Auth::id(),
-                    'reason' => $request->edit_reason,
-                    'changes' => $this->prepareChanges($order, $editData),
-                    'status' => 'pending'
-                ]);
+            DB::beginTransaction();
+            \Log::info('Transação iniciada...');
 
-                // Atualizar pedido
+            // Aplicar todas as alterações
+            \Log::info('Aplicando mudanças do cliente...');
+            $this->applyClientChanges($order, $editData['client'] ?? []);
+            
+            \Log::info('Aplicando mudanças dos itens...');
+            $this->applyItemsChanges($order, $editData['items'] ?? []);
+            
+            \Log::info('Aplicando mudanças da personalização...');
+            $this->applyPersonalizationChanges($order, $editData['personalization'] ?? []);
+            
+            \Log::info('Aplicando mudanças do pagamento...');
+            $this->applyPaymentChanges($order, $editData['payment'] ?? []);
+
+            // Marcar pedido como editado
+            \Log::info('Marcando pedido como editado...');
                 $order->update([
-                    'has_pending_edit' => true
+                'is_editing' => false,
+                'edit_status' => 'completed',
+                'edited_at' => now(),
+                'edited_by' => Auth::id(),
                 ]);
 
-                // Criar log
-                OrderLog::create([
+            // Log final da edição
+            $this->logEdit('finalize', 'Edição finalizada com sucesso', [
                     'order_id' => $order->id,
-                    'user_id' => Auth::id(),
-                    'action' => 'edit_requested',
-                    'description' => 'Solicitação de edição completa enviada via wizard',
-                    'details' => json_encode([
-                        'reason' => $request->edit_reason,
-                        'edit_request_id' => $editRequest->id,
-                        'changes_summary' => 'Edição completa do pedido via wizard'
-                    ])
-                ]);
-                
-                $message = 'Solicitação de edição completa enviada com sucesso! Aguarde a aprovação do administrador.';
-            }
+                'changes_applied' => array_keys($editData)
+            ]);
 
             // Limpar sessão
-            session()->forget('edit_order_data');
-            session()->forget('edit_order_id');
+            session()->forget(['edit_order_data', 'edit_order_id']);
+            \Log::info('Sessão limpa...');
 
             DB::commit();
+            \Log::info('Transação commitada com sucesso!');
 
-            return redirect()->route('orders.show', ['id' => $order->id, 't' => time()])
-                ->with('success', $message)
-                ->with('refresh', true);
+            return redirect()->route('orders.show', $order->id)
+                ->with('success', 'Pedido editado com sucesso! Todas as alterações foram aplicadas.');
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->with('error', 'Erro ao processar solicitação de edição: ' . $e->getMessage());
+            \Log::error('Erro ao finalizar edição do pedido: ' . $e->getMessage());
+            \Log::error('Stack trace:', $e->getTraceAsString());
+            
+            return redirect()->back()
+                ->with('error', 'Erro ao finalizar edição. Tente novamente.');
         }
     }
 
-    private function prepareChanges($order, $editData)
+    private function applyClientChanges(Order $order, array $clientData)
     {
-        $changes = [];
+        if (empty($clientData)) return;
 
-        // Dados do Cliente
-        $clientChanges = [];
         $client = $order->client;
+        $oldData = $client->toArray();
         
-        if ($client->name !== $editData['client']['name']) {
-            $clientChanges['name'] = ['old' => $client->name, 'new' => $editData['client']['name']];
-        }
-        if ($client->phone_primary !== $editData['client']['phone_primary']) {
-            $clientChanges['phone_primary'] = ['old' => $client->phone_primary, 'new' => $editData['client']['phone_primary']];
-        }
-        if ($client->email !== $editData['client']['email']) {
-            $clientChanges['email'] = ['old' => $client->email, 'new' => $editData['client']['email']];
-        }
-        if ($client->cpf_cnpj !== $editData['client']['cpf_cnpj']) {
-            $clientChanges['cpf_cnpj'] = ['old' => $client->cpf_cnpj, 'new' => $editData['client']['cpf_cnpj']];
-        }
-        if ($client->address !== $editData['client']['address']) {
-            $clientChanges['address'] = ['old' => $client->address, 'new' => $editData['client']['address']];
-        }
+        $client->update($clientData);
         
-        if (!empty($clientChanges)) {
-            $changes['client'] = $clientChanges;
+        // Log das mudanças do cliente
+        $changes = $this->getChanges($oldData, $clientData);
+        if (!empty($changes)) {
+            $this->logEdit('client_changes', 'Dados do cliente alterados', $changes);
         }
+    }
 
-        // Itens do Pedido
-        $itemsChanges = [];
-        foreach ($editData['items'] as $index => $itemData) {
-            $item = $order->items->get($index);
-            if ($item) {
-                $itemChanges = [];
-                if ($item->print_type !== $itemData['print_type']) {
-                    $itemChanges['print_type'] = ['old' => $item->print_type, 'new' => $itemData['print_type']];
-                }
-                if ($item->art_name !== $itemData['art_name']) {
-                    $itemChanges['art_name'] = ['old' => $item->art_name, 'new' => $itemData['art_name']];
-                }
-                if ($item->quantity != $itemData['quantity']) {
-                    $itemChanges['quantity'] = ['old' => $item->quantity, 'new' => $itemData['quantity']];
-                }
-                if ($item->fabric !== $itemData['fabric']) {
-                    $itemChanges['fabric'] = ['old' => $item->fabric, 'new' => $itemData['fabric']];
-                }
-                if ($item->color !== $itemData['color']) {
-                    $itemChanges['color'] = ['old' => $item->color, 'new' => $itemData['color']];
-                }
-                if ($item->unit_price != $itemData['unit_price']) {
-                    $itemChanges['unit_price'] = ['old' => $item->unit_price, 'new' => $itemData['unit_price']];
-                }
-                
-                if (!empty($itemChanges)) {
-                    $itemsChanges[$item->id] = $itemChanges;
+    private function applyItemsChanges(Order $order, array $itemsData)
+    {
+        if (empty($itemsData)) return;
+
+        foreach ($itemsData as $itemData) {
+            if (isset($itemData['id'])) {
+                $item = OrderItem::find($itemData['id']);
+                if ($item) {
+                    $oldData = $item->toArray();
+                    $item->update($itemData);
+                    
+                    // Log das mudanças do item
+                    $changes = $this->getChanges($oldData, $itemData);
+                    if (!empty($changes)) {
+                        $this->logEdit('item_changes', "Item {$item->item_number} alterado", $changes);
+                    }
                 }
             }
         }
-        if (!empty($itemsChanges)) {
-            $changes['items'] = $itemsChanges;
+    }
+
+    private function applyPersonalizationChanges(Order $order, array $personalizationData)
+    {
+        if (empty($personalizationData)) return;
+
+        // Aqui você pode implementar a lógica específica para personalização
+        // Por exemplo, atualizar sublimações, arquivos, etc.
+        
+        $this->logEdit('personalization_changes', 'Personalização alterada', $personalizationData);
+    }
+
+    private function applyPaymentChanges(Order $order, array $paymentData)
+    {
+        \Log::info('=== APLICANDO MUDANÇAS DE PAGAMENTO ===');
+        \Log::info('Dados de pagamento recebidos:', $paymentData);
+        
+        if (empty($paymentData)) {
+            \Log::info('Dados de pagamento vazios, retornando...');
+            return;
         }
 
-        // Personalização
-        $personalizationChanges = [];
-        if ($order->contract_type !== $editData['contract_type']) {
-            $personalizationChanges['contract_type'] = ['old' => $order->contract_type, 'new' => $editData['contract_type']];
-        }
-        if ($order->seller !== $editData['seller']) {
-            $personalizationChanges['seller'] = ['old' => $order->seller, 'new' => $editData['seller']];
-        }
-        if (!empty($personalizationChanges)) {
-            $changes['personalization'] = $personalizationChanges;
-        }
+        $oldData = $order->toArray();
+        \Log::info('Dados antigos do pedido:', $oldData);
+        
+        $updateData = [
+            'delivery_date' => $paymentData['delivery_date'] ?? $order->delivery_date,
+            'subtotal' => $paymentData['subtotal'] ?? $order->subtotal,
+            'discount' => $paymentData['discount'] ?? $order->discount,
+            'delivery_fee' => $paymentData['delivery_fee'] ?? $order->delivery_fee,
+            'total' => $paymentData['total'] ?? $order->total,
+            'notes' => $paymentData['notes'] ?? $order->notes,
+        ];
+        
+        \Log::info('Dados para atualização:', $updateData);
+        
+        $order->update($updateData);
+        \Log::info('Pedido atualizado com sucesso!');
 
-        // Pagamento e Valores
-        $paymentChanges = [];
-        if ($order->delivery_date !== $editData['delivery_date']) {
-            $paymentChanges['delivery_date'] = ['old' => $order->delivery_date, 'new' => $editData['delivery_date']];
+        // Log das mudanças de pagamento
+        $changes = $this->getChanges($oldData, $paymentData);
+        if (!empty($changes)) {
+            \Log::info('Mudanças detectadas:', $changes);
+            $this->logEdit('payment_changes', 'Dados de pagamento alterados', $changes);
+        } else {
+            \Log::info('Nenhuma mudança detectada nos dados de pagamento.');
         }
-        if ($order->subtotal != $editData['subtotal']) {
-            $paymentChanges['subtotal'] = ['old' => $order->subtotal, 'new' => $editData['subtotal']];
-        }
-        if ($order->discount != $editData['discount']) {
-            $paymentChanges['discount'] = ['old' => $order->discount, 'new' => $editData['discount']];
-        }
-        if ($order->delivery_fee != $editData['delivery_fee']) {
-            $paymentChanges['delivery_fee'] = ['old' => $order->delivery_fee, 'new' => $editData['delivery_fee']];
-        }
-        if ($order->total != $editData['total']) {
-            $paymentChanges['total'] = ['old' => $order->total, 'new' => $editData['total']];
-        }
-        if (!empty($paymentChanges)) {
-            $changes['payment'] = $paymentChanges;
-        }
+    }
 
-        // Observações
-        if ($order->notes !== $editData['notes']) {
-            $changes['notes'] = ['old' => $order->notes, 'new' => $editData['notes']];
+    private function getChanges(array $oldData, array $newData): array
+    {
+        $changes = [];
+        
+        foreach ($newData as $key => $newValue) {
+            $oldValue = $oldData[$key] ?? null;
+            
+            if ($oldValue !== $newValue) {
+                $changes[$key] = [
+                    'old' => $oldValue,
+                    'new' => $newValue
+                ];
+            }
         }
 
         return $changes;
     }
 
-    private function applyChangesDirectly($order, $editData, $reason)
+    private function logEdit(string $action, string $description, array $data = [])
     {
-        \Log::info('Iniciando aplicação direta de alterações', [
-            'order_id' => $order->id,
-            'edit_data_keys' => array_keys($editData),
-            'user_id' => Auth::id(),
-            'user_name' => Auth::user()->name
-        ]);
+        $orderId = session('edit_order_id');
         
-        $changes = [];
-        
-        // Atualizar dados do cliente
-        $client = $order->client;
-        $clientChanges = [];
-        
-        if ($client->name !== $editData['client']['name']) {
-            $clientChanges['name'] = ['old' => $client->name, 'new' => $editData['client']['name']];
-            $client->name = $editData['client']['name'];
-        }
-        if ($client->phone_primary !== $editData['client']['phone_primary']) {
-            $clientChanges['phone_primary'] = ['old' => $client->phone_primary, 'new' => $editData['client']['phone_primary']];
-            $client->phone_primary = $editData['client']['phone_primary'];
-        }
-        if ($client->email !== $editData['client']['email']) {
-            $clientChanges['email'] = ['old' => $client->email, 'new' => $editData['client']['email']];
-            $client->email = $editData['client']['email'];
-        }
-        if ($client->cpf_cnpj !== $editData['client']['cpf_cnpj']) {
-            $clientChanges['cpf_cnpj'] = ['old' => $client->cpf_cnpj, 'new' => $editData['client']['cpf_cnpj']];
-            $client->cpf_cnpj = $editData['client']['cpf_cnpj'];
-        }
-        if ($client->address !== $editData['client']['address']) {
-            $clientChanges['address'] = ['old' => $client->address, 'new' => $editData['client']['address']];
-            $client->address = $editData['client']['address'];
-        }
-        
-        if (!empty($clientChanges)) {
-            $client->save();
-            $changes['client'] = $clientChanges;
-            \Log::info('Alterações do cliente aplicadas', ['changes' => $clientChanges]);
-        }
+        if (!$orderId) return;
 
-        // Atualizar itens do pedido
-        $itemsChanges = [];
-        
-        // Recarregar os itens do pedido para garantir que temos os dados mais recentes
-        $order->load('items');
-        $currentItems = $order->items->keyBy('id');
-        
-        \Log::info('Itens atuais carregados', [
-            'count' => $currentItems->count(),
-            'item_ids' => $currentItems->keys()->toArray(),
-            'items_data' => $currentItems->toArray()
+        OrderEditHistory::create([
+            'order_id' => $orderId,
+            'user_id' => Auth::id(),
+            'user_name' => Auth::user()->name,
+            'action' => $action,
+            'description' => $description,
+            'changes' => $data,
         ]);
+
+        OrderLog::create([
+            'order_id' => $orderId,
+            'user_id' => Auth::id(),
+            'user_name' => Auth::user()->name,
+            'action' => 'edit_' . $action,
+            'description' => $description,
+            'old_value' => null,
+            'new_value' => $data
+        ]);
+    }
+
+    private function addItem(Request $request)
+    {
+        // Implementar lógica de adicionar item (similar ao OrderWizardController)
+        // Por enquanto, redirecionar de volta
+        return redirect()->back()->with('success', 'Funcionalidade de adicionar item será implementada.');
+    }
+
+    private function updateItem(Request $request)
+    {
+        \Log::info('=== INICIANDO ATUALIZAÇÃO DE ITEM ===');
+        \Log::info('Dados recebidos:', $request->all());
         
-        foreach ($editData['items'] as $index => $itemData) {
-            \Log::info('Processando item', [
-                'index' => $index,
-                'item_data' => $itemData,
-                'has_id' => isset($itemData['id']),
-                'item_id' => $itemData['id'] ?? 'N/A'
+        // Verificar se o método está sendo chamado
+        \Log::info('Método updateItem chamado com sucesso!');
+        
+        try {
+            $validated = $request->validate([
+                'editing_item_id' => 'required|integer',
+                'personalizacao' => 'required|array|min:1',
+                'personalizacao.*' => 'exists:product_options,id',
+                'tecido' => 'required|exists:product_options,id',
+                'tipo_tecido' => 'nullable|exists:product_options,id',
+                'cor' => 'required|exists:product_options,id',
+                'tipo_corte' => 'required|exists:product_options,id',
+                'detalhe' => 'nullable|exists:product_options,id',
+                'gola' => 'required|exists:product_options,id',
+                'tamanhos' => 'required|array',
+                'unit_price' => 'required|numeric|min:0',
+                'item_cover_image' => 'nullable|image|max:10240',
             ]);
             
-            if (isset($itemData['id']) && $currentItems->has($itemData['id'])) {
-                // Item existente - atualizar
-                $item = $currentItems->get($itemData['id']);
-                $itemChanges = [];
-                \Log::info('Atualizando item existente', ['item_id' => $item->id]);
-                
-                if ($item->print_type !== $itemData['print_type']) {
-                    $itemChanges['print_type'] = ['old' => $item->print_type, 'new' => $itemData['print_type']];
-                    $item->print_type = $itemData['print_type'];
+            // Calcular quantidade total a partir dos tamanhos
+            $totalQuantity = 0;
+            foreach ($validated['tamanhos'] as $size => $quantity) {
+                if ($quantity && $quantity > 0) {
+                    $totalQuantity += (int)$quantity;
                 }
-                if ($item->art_name !== $itemData['art_name']) {
-                    $itemChanges['art_name'] = ['old' => $item->art_name, 'new' => $itemData['art_name']];
-                    $item->art_name = $itemData['art_name'];
-                }
-                if ($item->quantity != $itemData['quantity']) {
-                    $itemChanges['quantity'] = ['old' => $item->quantity, 'new' => $itemData['quantity']];
-                    $item->quantity = $itemData['quantity'];
-                }
-                if ($item->fabric !== $itemData['fabric']) {
-                    $itemChanges['fabric'] = ['old' => $item->fabric, 'new' => $itemData['fabric']];
-                    $item->fabric = $itemData['fabric'];
-                }
-                if ($item->color !== $itemData['color']) {
-                    $itemChanges['color'] = ['old' => $item->color, 'new' => $itemData['color']];
-                    $item->color = $itemData['color'];
-                }
-                if ($item->unit_price != $itemData['unit_price']) {
-                    $itemChanges['unit_price'] = ['old' => $item->unit_price, 'new' => $itemData['unit_price']];
-                    $item->unit_price = $itemData['unit_price'];
-                }
-                
-                // Recalcular total_price se quantidade ou preço mudaram
-                $newTotalPrice = $item->quantity * $item->unit_price;
-                if ($item->total_price != $newTotalPrice) {
-                    $itemChanges['total_price'] = ['old' => $item->total_price, 'new' => $newTotalPrice];
-                    $item->total_price = $newTotalPrice;
-                }
-                
-                if (!empty($itemChanges)) {
-                    $item->save();
-                    $itemsChanges[$item->id] = $itemChanges;
-                    \Log::info('Item atualizado', [
-                        'item_id' => $item->id,
-                        'changes' => $itemChanges,
-                        'new_values' => $item->toArray()
-                    ]);
-                } else {
-                    \Log::info('Nenhuma alteração detectada para o item', [
-                        'item_id' => $item->id,
-                        'current_values' => $item->toArray(),
-                        'new_values' => $itemData
-                    ]);
-                }
-            } else {
-                // Novo item - criar
-                $newItem = new OrderItem([
-                    'order_id' => $order->id,
-                    'print_type' => $itemData['print_type'],
-                    'art_name' => $itemData['art_name'],
-                    'quantity' => $itemData['quantity'],
-                    'fabric' => $itemData['fabric'],
-                    'color' => $itemData['color'],
-                    'unit_price' => $itemData['unit_price'],
-                    'item_number' => $order->items->count() + 1
-                ]);
-                $newItem->save();
-                
-                $itemsChanges['new_' . $newItem->id] = [
-                    'action' => 'created',
-                    'data' => $itemData
-                ];
+            }
+            
+            // Adicionar quantidade calculada aos dados validados
+            $validated['quantity'] = $totalQuantity;
+            
+            // Validar se a quantidade total é maior que 0
+            if ($totalQuantity <= 0) {
+                throw new \Illuminate\Validation\ValidationException(
+                    validator([], []), 
+                    ['tamanhos' => ['Pelo menos um tamanho deve ter quantidade maior que 0.']]
+                );
+            }
+            
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Erro de validação:', $e->errors());
+            throw $e;
+        }
+        
+        \Log::info('Dados validados:', $validated);
+
+        $orderId = session('edit_order_id');
+        $order = Order::with('items')->findOrFail($orderId);
+        $item = $order->items()->findOrFail($validated['editing_item_id']);
+        
+        \Log::info('Item encontrado:', $item->toArray());
+
+        // Processar upload da imagem de capa do item
+        $coverImagePath = $item->cover_image; // Manter imagem atual se não houver nova
+        if ($request->hasFile('item_cover_image')) {
+            $coverImage = $request->file('item_cover_image');
+            $coverImageName = time() . '_' . uniqid() . '_' . $coverImage->getClientOriginalName();
+            $coverImagePath = $coverImage->storeAs('orders/items', $coverImageName, 'public');
+            \Log::info('Nova imagem de capa salva:', $coverImagePath);
+        }
+
+        // Buscar nomes das opções
+        $personalizacoes = \App\Models\ProductOption::whereIn('id', $validated['personalizacao'])->get();
+        $personalizacaoNames = $personalizacoes->pluck('name')->join(', ');
+
+        $tecido = \App\Models\ProductOption::find($validated['tecido']);
+        $tipoTecido = $validated['tipo_tecido'] ? \App\Models\ProductOption::find($validated['tipo_tecido']) : null;
+        $cor = \App\Models\ProductOption::find($validated['cor']);
+        $tipoCorte = \App\Models\ProductOption::find($validated['tipo_corte']);
+        $detalhe = $validated['detalhe'] ? \App\Models\ProductOption::find($validated['detalhe']) : null;
+        $gola = \App\Models\ProductOption::find($validated['gola']);
+
+        // Calcular preço base
+        $basePrice = $tipoCorte->price ?? 0;
+        if ($detalhe) {
+            $basePrice += $detalhe->price ?? 0;
+        }
+        if ($gola) {
+            $basePrice += $gola->price ?? 0;
+        }
+
+        // Processar tamanhos
+        $sizes = [];
+        foreach ($validated['tamanhos'] as $size => $quantity) {
+            if ($quantity && $quantity > 0) {
+                $sizes[$size] = (int)$quantity;
             }
         }
         
-        // Remover itens que não estão mais na lista
-        $newItemIds = collect($editData['items'])->pluck('id')->filter()->toArray();
-        foreach ($currentItems as $item) {
-            if (!in_array($item->id, $newItemIds)) {
-                $itemsChanges['deleted_' . $item->id] = [
-                    'action' => 'deleted',
-                    'data' => $item->toArray()
-                ];
-                $item->delete();
-            }
-        }
-        
-        if (!empty($itemsChanges)) {
-            $changes['items'] = $itemsChanges;
-            \Log::info('Alterações dos itens aplicadas', ['changes' => $itemsChanges]);
-        }
+        // Usar a quantidade já calculada na validação
+        $totalQuantity = $validated['quantity'];
 
-        // Atualizar dados do pedido
-        $orderChanges = [];
+        // Dados antigos para log
+        $oldData = $item->toArray();
         
-        if ($order->contract_type !== $editData['contract_type']) {
-            $orderChanges['contract_type'] = ['old' => $order->contract_type, 'new' => $editData['contract_type']];
-            $order->contract_type = $editData['contract_type'];
-        }
-        if ($order->seller !== $editData['seller']) {
-            $orderChanges['seller'] = ['old' => $order->seller, 'new' => $editData['seller']];
-            $order->seller = $editData['seller'];
-        }
-        if ($order->delivery_date !== $editData['delivery_date']) {
-            $orderChanges['delivery_date'] = ['old' => $order->delivery_date, 'new' => $editData['delivery_date']];
-            $order->delivery_date = $editData['delivery_date'];
-        }
-        if ($order->subtotal != $editData['subtotal']) {
-            $orderChanges['subtotal'] = ['old' => $order->subtotal, 'new' => $editData['subtotal']];
-            $order->subtotal = $editData['subtotal'];
-        }
-        if ($order->discount != $editData['discount']) {
-            $orderChanges['discount'] = ['old' => $order->discount, 'new' => $editData['discount']];
-            $order->discount = $editData['discount'];
-        }
-        if ($order->delivery_fee != $editData['delivery_fee']) {
-            $orderChanges['delivery_fee'] = ['old' => $order->delivery_fee, 'new' => $editData['delivery_fee']];
-            $order->delivery_fee = $editData['delivery_fee'];
-        }
-        if ($order->total != $editData['total']) {
-            $orderChanges['total'] = ['old' => $order->total, 'new' => $editData['total']];
-            $order->total = $editData['total'];
-        }
-        if ($order->notes !== $editData['notes']) {
-            $orderChanges['notes'] = ['old' => $order->notes, 'new' => $editData['notes']];
-            $order->notes = $editData['notes'];
-        }
-        
-        if (!empty($orderChanges)) {
-            $order->last_updated_at = now();
-            $order->save();
-            $changes['order'] = $orderChanges;
-            \Log::info('Alterações do pedido aplicadas', ['changes' => $orderChanges]);
-        }
-
-        // Criar log de edição
-        \App\Models\OrderEditHistory::create([
-            'order_id' => $order->id,
-            'user_id' => Auth::id(),
-            'user_name' => Auth::user()->name,
-            'action' => 'edit_completed',
-            'description' => 'Edição completa aplicada diretamente por administrador',
-            'changes' => $changes
+        \Log::info('Dados antigos do item:', $oldData);
+        \Log::info('Novos dados calculados:', [
+            'print_type' => $personalizacaoNames,
+            'fabric' => $tecido->name . ($tipoTecido ? ' - ' . $tipoTecido->name : ''),
+            'color' => $cor->name,
+            'collar' => $gola->name,
+            'model' => $tipoCorte->name,
+            'detail' => $detalhe ? $detalhe->name : null,
+            'sizes' => $sizes,
+            'quantity' => $totalQuantity,
+            'unit_price' => $basePrice,
+            'total_price' => $totalQuantity * $basePrice,
         ]);
 
-        // Criar log geral
-        OrderLog::create([
-            'order_id' => $order->id,
-            'user_id' => Auth::id(),
-            'user_name' => Auth::user()->name,
-            'action' => 'edit_completed',
-            'description' => 'Edição completa aplicada diretamente por administrador',
-            'old_value' => null,
-            'new_value' => $changes
+        // Atualizar item
+        $updateData = [
+            'print_type' => $personalizacaoNames,
+            'fabric' => $tecido->name . ($tipoTecido ? ' - ' . $tipoTecido->name : ''),
+            'color' => $cor->name,
+            'collar' => $gola->name,
+            'model' => $tipoCorte->name,
+            'detail' => $detalhe ? $detalhe->name : null,
+            'sizes' => json_encode($sizes),
+            'quantity' => $totalQuantity,
+            'unit_price' => $basePrice,
+            'total_price' => $totalQuantity * $basePrice,
+            'cover_image' => $coverImagePath,
+        ];
+        
+        \Log::info('Tentando atualizar item com dados:', $updateData);
+        
+        $item->update($updateData);
+        
+        \Log::info('Item atualizado com sucesso!');
+
+        // Recalcular totais do pedido
+        $newSubtotal = $order->items()->sum('total_price');
+        $newTotalItems = $order->items()->sum('quantity');
+        
+        $order->update([
+            'subtotal' => $newSubtotal,
+            'total_items' => $newTotalItems,
         ]);
         
-        // Recarregar o modelo para garantir que as alterações sejam refletidas
+        // Log da atualização dos totais
+        \Log::info("Totais atualizados - Subtotal: {$newSubtotal}, Total Items: {$newTotalItems}");
+
+        // Log da edição do item
+        $changes = $this->getChanges($oldData, $item->toArray());
+        $this->logEdit('item_updated', "Item {$item->item_number} atualizado", $changes);
+
+        // Recarregar o pedido com os dados atualizados
         $order->refresh();
-        $order->load(['client', 'items']);
-        
-        // Forçar atualização do timestamp
-        $order->touch();
-        
-        // Verificar se as alterações foram realmente aplicadas
-        $order->refresh();
-        $order->load(['client', 'items']);
-        
-        // Forçar atualização do cache do relacionamento
-        $order->unsetRelation('items');
         $order->load('items');
         
-        // Verificar se as alterações foram realmente aplicadas
-        $order->refresh();
-        $order->load(['client', 'items']);
-        
-        \Log::info('Edição direta concluída com sucesso', [
-            'order_id' => $order->id,
-            'total_changes' => count($changes),
-            'changes_summary' => array_keys($changes),
-            'order_updated_at' => $order->last_updated_at,
-            'items_count' => $order->items->count(),
-            'final_items' => $order->items->toArray()
-        ]);
+        return redirect()->route('orders.edit-wizard.sewing')->with('success', "Item {$item->item_number} atualizado com sucesso!");
+    }
+
+    private function finishSewing(Request $request)
+    {
+        // Implementar lógica de finalizar costura
+        return redirect()->route('orders.edit-wizard.customization');
+    }
+
+    private function deleteItem(Request $request)
+    {
+        // Implementar lógica de deletar item
+        return redirect()->back()->with('success', 'Item removido com sucesso.');
+    }
+
+    public function getItemData($id)
+    {
+        try {
+            $item = OrderItem::findOrFail($id);
+            
+            // Log para debug
+            \Log::info('Item encontrado:', ['id' => $id, 'item' => $item->toArray()]);
+            
+            return response()->json($item->toArray());
+        } catch (\Exception $e) {
+            \Log::error('Erro ao buscar item:', ['id' => $id, 'error' => $e->getMessage()]);
+            
+            return response()->json([
+                'error' => 'Item não encontrado',
+                'message' => $e->getMessage()
+            ], 404);
+        }
     }
 }
