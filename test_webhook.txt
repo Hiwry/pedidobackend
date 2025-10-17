@@ -1,0 +1,54 @@
+=== TESTE DE WEBHOOK GITHUB ===
+
+Data/Hora: 2025-01-17 15:30:00
+Status: TESTE INICIADO
+
+=== INFORMAÇÕES DO TESTE ===
+
+Este arquivo foi criado para testar o webhook do GitHub.
+Quando você fizer push deste arquivo, o webhook deve:
+
+1. ✅ Detectar o push no GitHub
+2. ✅ Chamar o arquivo deploy.php
+3. ✅ Executar o deploy automático
+4. ✅ Atualizar o servidor com as novas alterações
+
+=== COMANDOS QUE DEVEM SER EXECUTADOS ===
+
+- git pull origin main
+- composer install --no-dev --optimize-autoloader
+- php artisan migrate --force
+- php artisan config:clear
+- php artisan cache:clear
+- php artisan view:clear
+- php artisan route:clear
+- php artisan config:cache
+- php artisan route:cache
+- php artisan view:cache
+
+=== VERIFICAÇÕES ===
+
+Após o deploy, verificar:
+- [ ] Arquivo foi atualizado no servidor
+- [ ] Logs em storage/logs/deploy.log
+- [ ] Aplicação funcionando normalmente
+- [ ] Caches limpos e recriados
+
+=== CONFIGURAÇÃO DO WEBHOOK ===
+
+URL: https://seu-dominio.com/deploy.php
+Content Type: application/json
+Secret: [DEPLOY_SECRET do .env]
+Events: Just the push event
+
+=== RESULTADO ESPERADO ===
+
+Se tudo funcionar corretamente:
+- Status 200 OK
+- Resposta JSON: {"status":"success","message":"Deploy executado com sucesso!"}
+- Logs detalhados em storage/logs/deploy.log
+
+=== FIM DO TESTE ===
+
+Timestamp: 2025-01-17 15:30:00
+Teste ID: WEBHOOK_TEST_001
