@@ -1,0 +1,62 @@
+=== TESTE DE WEBHOOK GITHUB - VERSÃO 2 ===
+
+Data/Hora: 2025-01-17 16:00:00
+Status: TESTE APÓS CORREÇÃO DO 404
+
+=== CORREÇÕES APLICADAS ===
+
+✅ deploy.php copiado para public/deploy.php
+✅ Rota /deploy criada no Laravel
+✅ Webhook agora acessível via:
+   - https://dominio.com/deploy.php (acesso direto)
+   - https://dominio.com/deploy (via rota Laravel)
+
+=== INFORMAÇÕES DO TESTE ===
+
+Este é o segundo teste do webhook após corrigir o erro 404.
+O webhook anterior estava retornando "Not Found" porque o arquivo
+não estava acessível via web.
+
+=== COMANDOS QUE DEVEM SER EXECUTADOS ===
+
+1. git pull origin main
+2. composer install --no-dev --optimize-autoloader
+3. php artisan migrate --force
+4. php artisan config:clear
+5. php artisan cache:clear
+6. php artisan view:clear
+7. php artisan route:clear
+8. php artisan config:cache
+9. php artisan route:cache
+10. php artisan view:cache
+
+=== VERIFICAÇÕES ESPERADAS ===
+
+Após este push, verificar:
+- [ ] Webhook não retorna mais erro 404
+- [ ] Status 200 OK recebido
+- [ ] Resposta JSON: {"status":"success","message":"Deploy executado com sucesso!"}
+- [ ] Logs em storage/logs/deploy.log
+- [ ] Arquivo test_webhook_v2.txt atualizado no servidor
+- [ ] Aplicação funcionando normalmente
+
+=== CONFIGURAÇÃO ATUAL ===
+
+URL do Webhook: https://seu-dominio.com/deploy.php
+Content Type: application/json
+Secret: [DEPLOY_SECRET do .env]
+Events: Just the push event
+
+=== RESULTADO ESPERADO ===
+
+Se tudo funcionar corretamente:
+✅ Status: 200 OK
+✅ Response: JSON com status success
+✅ Deploy automático executado
+✅ Logs detalhados gerados
+
+=== FIM DO TESTE V2 ===
+
+Timestamp: 2025-01-17 16:00:00
+Teste ID: WEBHOOK_TEST_002
+Status: AGUARDANDO EXECUÇÃO
