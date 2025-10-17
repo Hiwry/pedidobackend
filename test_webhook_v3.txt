@@ -1,0 +1,72 @@
+=== TESTE DE WEBHOOK GITHUB - VERSÃO 3 ===
+
+Data/Hora: 2025-01-17 17:05:00
+Status: TESTE COM ARQUIVO DIRETO
+
+=== PROBLEMA IDENTIFICADO ===
+
+A rota /deploy ainda está retornando 404 mesmo com o controller.
+Vamos testar usando o arquivo direto: https://vestalize.com/deploy.php
+
+=== SOLUÇÃO TESTADA ===
+
+✅ DeployController criado
+✅ Rota /deploy atualizada
+❌ Ainda retorna 404
+
+=== NOVA ABORDAGEM ===
+
+Usar o arquivo direto na pasta public/:
+- URL: https://vestalize.com/deploy.php
+- Arquivo: public/deploy.php
+- Acesso direto via web
+
+=== INFORMAÇÕES DO TESTE ===
+
+Este é o terceiro teste do webhook.
+Agora vamos usar o arquivo direto ao invés da rota Laravel.
+
+=== COMANDOS QUE DEVEM SER EXECUTADOS ===
+
+1. git pull origin main
+2. composer install --no-dev --optimize-autoloader
+3. php artisan migrate --force
+4. php artisan config:clear
+5. php artisan cache:clear
+6. php artisan view:clear
+7. php artisan route:clear
+8. php artisan config:cache
+9. php artisan route:cache
+10. php artisan view:cache
+
+=== VERIFICAÇÕES ESPERADAS ===
+
+Após este push, verificar:
+- [ ] Webhook usando URL: https://vestalize.com/deploy.php
+- [ ] Status 200 OK recebido
+- [ ] Resposta JSON: {"status":"success","message":"Deploy executado com sucesso!"}
+- [ ] Logs em storage/logs/deploy.log
+- [ ] Arquivo test_webhook_v3.txt atualizado no servidor
+- [ ] Aplicação funcionando normalmente
+
+=== CONFIGURAÇÃO ATUAL ===
+
+URL do Webhook: https://vestalize.com/deploy.php
+Content Type: application/json
+Secret: [DEPLOY_SECRET do .env]
+Events: Just the push event
+
+=== RESULTADO ESPERADO ===
+
+Se tudo funcionar corretamente:
+✅ Status: 200 OK
+✅ Response: JSON com status success
+✅ Deploy automático executado
+✅ Logs detalhados gerados
+
+=== FIM DO TESTE V3 ===
+
+Timestamp: 2025-01-17 17:05:00
+Teste ID: WEBHOOK_TEST_003
+Status: AGUARDANDO EXECUÇÃO
+Método: ARQUIVO DIRETO
