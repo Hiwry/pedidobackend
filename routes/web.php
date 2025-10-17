@@ -142,9 +142,6 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
 
 
 // Webhook para deploy automático
-Route::post('/deploy', function() {
-    // Incluir o script de deploy
-    include __DIR__ . '/../deploy.php';
-})->name('deploy.webhook');
+Route::post('/deploy', [\App\Http\Controllers\DeployController::class, 'webhook'])->name('deploy.webhook');
 
 require __DIR__.'/auth.php';
