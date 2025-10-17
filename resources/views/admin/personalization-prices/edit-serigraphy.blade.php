@@ -215,7 +215,6 @@
                                 <th class="rounded-tl-lg w-32">DE</th>
                                 <th class="w-32">ATÉ</th>
                                 <!-- Tamanhos dinâmicos serão inseridos aqui -->
-                                <th>COR +</th>
                                 <th class="rounded-tr-lg w-20">AÇÕES</th>
                             </tr>
                         </thead>
@@ -394,8 +393,8 @@
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                                     <div class="space-y-1">
                                         <p><strong>• ESCUDO, A4, A3:</strong> Preço base para cada tamanho (já inclui 1 cor)</p>
-                                        <p><strong>• COR +:</strong> Valor adicional por cor extra</p>
-                                        <p><strong>• Exemplo:</strong> A4 (10 unid.) = R$ 5,46 + COR + (R$ 8,82) = R$ 14,28 total para 2 cores</p>
+                                        <p><strong>• Cores:</strong> Configure os preços das cores adicionais na seção abaixo</p>
+                                        <p><strong>• Exemplo:</strong> A4 (10 unid.) = R$ 5,46 + cor adicional (R$ 1,89) = R$ 7,35 total para 2 cores</p>
                                     </div>
                                     <div class="space-y-1">
                                         <p><strong>• Quantidade:</strong> Faixa mínima de peças</p>
@@ -552,11 +551,11 @@
             const existingHeaders = headerRow.querySelectorAll('th');
             
             // Verificar se já temos os cabeçalhos dos tamanhos
-            const hasSizeHeaders = existingHeaders.length > 4; // DE, ATÉ, tamanhos, COR+, AÇÕES
+            const hasSizeHeaders = existingHeaders.length > 3; // DE, ATÉ, tamanhos, AÇÕES
             
             if (!hasSizeHeaders) {
-                // Manter apenas DE, ATÉ, COR + e AÇÕES
-                const fixedHeaders = [existingHeaders[0], existingHeaders[1], existingHeaders[existingHeaders.length - 2], existingHeaders[existingHeaders.length - 1]];
+                // Manter apenas DE, ATÉ e AÇÕES
+                const fixedHeaders = [existingHeaders[0], existingHeaders[1], existingHeaders[existingHeaders.length - 1]];
                 
                 // Limpar header
                 headerRow.innerHTML = '';
@@ -573,9 +572,8 @@
                     headerRow.appendChild(th);
                 });
                 
-                // Adicionar COR + e AÇÕES
+                // Adicionar AÇÕES
                 headerRow.appendChild(fixedHeaders[2]);
-                headerRow.appendChild(fixedHeaders[3]);
                 
                 // Atualizar todas as linhas existentes
                 updateAllTableRows();
@@ -634,25 +632,6 @@
                 row.appendChild(td);
             });
             
-            // Adicionar célula COR +
-            const colorCell = document.createElement('td');
-            colorCell.className = 'bg-gray-50';
-            const colorInput = document.createElement('input');
-            colorInput.type = 'number';
-            colorInput.name = `colors[${row.dataset.index}][price]`;
-            colorInput.step = '0.01';
-            colorInput.min = '0';
-            colorInput.className = 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white';
-            colorInput.placeholder = '0,00';
-            
-            // Tentar manter valor existente se houver
-            const existingColorInput = row.querySelector('input[name*="colors"][name*="[price]"]');
-            if (existingColorInput) {
-                colorInput.value = existingColorInput.value;
-            }
-            
-            colorCell.appendChild(colorInput);
-            row.appendChild(colorCell);
             
             // Adicionar AÇÕES
             row.appendChild(actionsCell);
