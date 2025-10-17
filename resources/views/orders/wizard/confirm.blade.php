@@ -342,10 +342,41 @@
                         </p>
                     </div>
 
+                    <!-- Imagem de Capa do Pedido -->
+                    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                        <h3 class="text-lg font-semibold mb-4">📸 Imagem de Capa do Pedido</h3>
+                        <div>
+                            <label for="order_cover_image" class="block text-sm font-medium text-gray-700 mb-2">
+                                Imagem de Capa (opcional)
+                                <span class="text-xs text-gray-500 font-normal ml-2">Será usada em impressões e PDFs</span>
+                            </label>
+                            <input type="file" id="order_cover_image" name="order_cover_image" accept="image/*"
+                                   onchange="previewOrderCoverImage(this)"
+                                   class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <div id="order-cover-preview" class="mt-3 hidden">
+                                <img id="order-cover-preview-img" src="" alt="Preview" class="max-w-xs rounded-lg border border-gray-300">
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Ações -->
                     <div class="mt-6 space-y-3">
-                        <form method="POST" action="{{ route('orders.wizard.finalize') }}" id="finalize-form" onsubmit="return handleFinalize(this)">
+                        <form method="POST" action="{{ route('orders.wizard.finalize') }}" id="finalize-form" onsubmit="return handleFinalize(this)" enctype="multipart/form-data">
                             @csrf
+                            <input type="file" id="finalize-cover-image" name="order_cover_image" accept="image/*" class="hidden">
+                            
+                            <!-- Checkbox para Evento -->
+                            <div class="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                <label class="flex items-center space-x-3 cursor-pointer">
+                                    <input type="checkbox" name="is_event" value="1" 
+                                           {{ old('is_event') ? 'checked' : '' }}
+                                           class="w-5 h-5 text-yellow-600 bg-gray-100 border-gray-300 rounded focus:ring-yellow-500 focus:ring-2">
+                                    <div>
+                                        <span class="text-sm font-medium text-yellow-800">🎉 Marcar como Pedido de Evento</span>
+                                        <p class="text-xs text-yellow-600 mt-1">Pedidos de evento recebem prioridade e destaque especial</p>
+                                    </div>
+                                </label>
+                            </div>
                             <button type="submit" id="finalize-btn"
                                     class="block w-full px-4 py-3 bg-green-600 text-white text-center rounded-md hover:bg-green-700 font-medium shadow-lg transition-all">
                                 <span id="finalize-text">✓ Confirmar Pedido e Enviar para Produção</span>
@@ -379,6 +410,30 @@
 
     <script>
         let formSubmitted = false;
+
+        // Função para preview da imagem de capa
+        function previewOrderCoverImage(input) {
+            const preview = document.getElementById('order-cover-preview');
+            const previewImg = document.getElementById('order-cover-preview-img');
+            const hiddenInput = document.getElementById('finalize-cover-image');
+            
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImg.src = e.target.result;
+                    preview.classList.remove('hidden');
+                };
+                reader.readAsDataURL(input.files[0]);
+                
+                // Transferir o arquivo para o input hidden do formulário usando DataTransfer
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(input.files[0]);
+                hiddenInput.files = dataTransfer.files;
+            } else {
+                preview.classList.add('hidden');
+                hiddenInput.value = '';
+            }
+        }
 
         function handleFinalize(form) {
             if (formSubmitted) {

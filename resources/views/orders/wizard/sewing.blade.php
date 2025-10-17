@@ -252,27 +252,6 @@
                                 </div>
                             </div>
 
-                            <!-- Seção: Imagem de Capa do Item -->
-                            <div class="space-y-3">
-                                <div class="flex items-center space-x-2 mb-3">
-                                    <div class="w-5 h-5 bg-indigo-100 rounded-md flex items-center justify-center">
-                                        <svg class="w-3 h-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                        </svg>
-                                    </div>
-                                    <h2 class="text-sm font-medium text-gray-900">📸 Imagem de Capa do Item</h2>
-                                </div>
-
-                                <div class="bg-gray-50 rounded-md p-4">
-                                    <p class="text-xs text-gray-600 mb-3">Imagem que será usada em impressões e PDFs (opcional)</p>
-                                    <input type="file" name="item_cover_image" id="item_cover_image" accept="image/*"
-                                           onchange="previewItemCoverImage(this)"
-                                           class="w-full px-3 py-2 rounded-md border border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-sm">
-                                    <div id="item-cover-preview" class="mt-3 hidden">
-                                        <img id="item-cover-preview-img" src="" alt="Preview" class="max-w-xs rounded-lg border border-gray-300">
-                                    </div>
-                                </div>
-                            </div>
 
                             <!-- Seção: Preços -->
                             <div class="space-y-3">
@@ -305,6 +284,25 @@
                                         </div>
                                     </div>
                                     <input type="hidden" name="unit_price" id="unit_price" value="0">
+                                </div>
+                            </div>
+
+                            <!-- Seção: Observações do Item -->
+                            <div class="space-y-3">
+                                <div class="flex items-center space-x-2 mb-3">
+                                    <div class="w-5 h-5 bg-indigo-100 rounded-md flex items-center justify-center">
+                                        <svg class="w-3 h-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                        </svg>
+                                    </div>
+                                    <h2 class="text-sm font-medium text-gray-900">Observações do Item (opcional)</h2>
+                                </div>
+
+                                <div class="bg-gray-50 rounded-md p-4">
+                                    <textarea name="art_notes" rows="3" 
+                                              placeholder="Ex: Aplicar com cuidado, cliente pediu urgência, etc."
+                                              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm">{{ old('art_notes', isset($editData) ? $editData->art_notes : '') }}</textarea>
+                                    <p class="mt-1 text-xs text-gray-500">Informações importantes para a produção deste item</p>
                                 </div>
                             </div>
 
@@ -767,22 +765,6 @@
             });
         }
 
-        // Função para preview da imagem de capa do item
-        function previewItemCoverImage(input) {
-            const preview = document.getElementById('item-cover-preview');
-            const previewImg = document.getElementById('item-cover-preview-img');
-            
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    previewImg.src = e.target.result;
-                    preview.classList.remove('hidden');
-                };
-                reader.readAsDataURL(input.files[0]);
-            } else {
-                preview.classList.add('hidden');
-            }
-        }
 
         // Adicionar botão de cancelar edição se estiver editando
         @if(isset($editData))

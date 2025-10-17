@@ -46,9 +46,11 @@
                 <div class="flex-1">
                     <input type="text" 
                            name="search" 
+                           id="search-input"
                            value="{{ $search ?? '' }}"
-                           placeholder="🔍 Buscar por nº do pedido, nome do cliente, telefone ou nome da arte..."
-                           class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                           placeholder="🔍 Buscar por nº do pedido (ex: 28 ou 000028), nome do cliente, telefone ou nome da arte..."
+                           class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                           onkeypress="handleSearchKeypress(event)">
                 </div>
                 <button type="submit" 
                         class="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 whitespace-nowrap">
@@ -82,9 +84,14 @@
                         @foreach(($ordersByStatus[$status->id] ?? collect()) as $order)
                             @php
                                 $firstItem = $order->items->first();
-                                $coverImage = $firstItem && $firstItem->cover_image 
-                                    ? asset('storage/' . $firstItem->cover_image) 
-                                    : null;
+                                // Priorizar imagem de capa do pedido, depois do primeiro item
+                                $coverImage = null;
+                                if ($order->cover_image) {
+                                    $coverImage = asset('storage/' . $order->cover_image);
+                                } elseif ($firstItem && $firstItem->cover_image) {
+                                    $coverImage = asset('storage/' . $firstItem->cover_image);
+                                }
+                                
                                 // Buscar o nome da arte da primeira personalização
                                 $artName = null;
                                 if ($firstItem && $firstItem->sublimations) {
@@ -371,6 +378,51 @@
         </div>
     </div>
 
+    <!-- Modal de Edição de Imagem de Capa -->
+    <div id="cover-image-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">Editar Imagem de Capa</h3>
+                    <button onclick="closeCoverImageModal()" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <form id="cover-image-form" enctype="multipart/form-data">
+                    @csrf
+                    <input type="hidden" id="cover-item-id" name="item_id">
+                    
+                    <div class="mb-4">
+                        <label for="cover-image-input" class="block text-sm font-medium text-gray-700 mb-2">
+                            Selecione uma imagem
+                        </label>
+                        <input type="file" id="cover-image-input" name="cover_image" accept="image/*" 
+                               onchange="previewCoverImage(this)"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    
+                    <div id="cover-preview" class="mb-4 hidden">
+                        <img id="cover-preview-img" src="" alt="Preview" class="max-w-full h-48 object-cover rounded-lg border">
+                    </div>
+                    
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" onclick="closeCoverImageModal()" 
+                                class="px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-all">
+                            Cancelar
+                        </button>
+                        <button type="submit" 
+                                class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-all">
+                            Salvar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal de Solicitação de Antecipação -->
     <div id="delivery-request-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
         <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
@@ -429,6 +481,14 @@
     </div>
 
     <script>
+        // Função para busca com Enter
+        function handleSearchKeypress(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                document.querySelector('form').submit();
+            }
+        }
+
         // Drag and Drop functionality
         let draggedElement = null;
         let isDragging = false;
@@ -608,12 +668,25 @@
                         </div>
 
                         <!-- Imagem de Capa -->
-                        ${item.cover_image ? `
                         <div class="bg-white rounded-lg p-3 mb-4">
-                            <h6 class="font-semibold mb-2 text-gray-900">🖼️ Imagem de Capa</h6>
-                            <img src="/storage/${item.cover_image}" alt="Capa" class="max-w-sm mx-auto rounded-lg border">
+                            <div class="flex justify-between items-center mb-2">
+                                <h6 class="font-semibold text-gray-900">🖼️ Imagem de Capa</h6>
+                                <button onclick="editItemCoverImage(${item.id})" 
+                                        class="px-3 py-1 bg-indigo-600 text-white text-xs rounded-md hover:bg-indigo-700 transition-colors">
+                                    ${item.cover_image ? 'Alterar' : 'Adicionar'}
+                                </button>
+                            </div>
+                            ${item.cover_image ? `
+                                <img src="/storage/${item.cover_image}" alt="Capa" class="max-w-sm mx-auto rounded-lg border">
+                            ` : `
+                                <div class="text-center text-gray-500 py-4">
+                                    <svg class="w-12 h-12 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                    <p class="text-sm">Nenhuma imagem de capa</p>
+                                </div>
+                            `}
                         </div>
-                        ` : ''}
 
                         <!-- Detalhes da Costura -->
                         <div class="bg-white rounded-lg p-4 mb-4">
@@ -904,6 +977,12 @@
             }
         });
 
+        document.getElementById('cover-image-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeCoverImageModal();
+            }
+        });
+
         document.getElementById('payment-modal').addEventListener('click', function(e) {
             if (e.target === this) {
                 closePaymentModal();
@@ -915,6 +994,9 @@
                 closeDeliveryRequestModal();
             }
         });
+
+        // Event listener para formulário de imagem de capa
+        document.getElementById('cover-image-form').addEventListener('submit', submitCoverImage);
 
         function openDeliveryRequestModal(orderId, currentDeliveryDate) {
             document.getElementById('delivery-order-id').value = orderId;
@@ -935,6 +1017,65 @@
         function closeDeliveryRequestModal() {
             document.getElementById('delivery-request-modal').classList.add('hidden');
             document.getElementById('delivery-request-form').reset();
+        }
+
+        // Funções para modal de imagem de capa
+        function editItemCoverImage(itemId) {
+            document.getElementById('cover-item-id').value = itemId;
+            document.getElementById('cover-image-modal').classList.remove('hidden');
+        }
+
+        function closeCoverImageModal() {
+            document.getElementById('cover-image-modal').classList.add('hidden');
+            document.getElementById('cover-image-form').reset();
+            document.getElementById('cover-preview').classList.add('hidden');
+        }
+
+        function previewCoverImage(input) {
+            const preview = document.getElementById('cover-preview');
+            const previewImg = document.getElementById('cover-preview-img');
+            
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImg.src = e.target.result;
+                    preview.classList.remove('hidden');
+                };
+                reader.readAsDataURL(input.files[0]);
+            } else {
+                preview.classList.add('hidden');
+            }
+        }
+
+        function submitCoverImage(event) {
+            event.preventDefault();
+            
+            const formData = new FormData(event.target);
+            const itemId = formData.get('item_id');
+            
+            fetch(`/api/order-items/${itemId}/cover-image`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('Imagem de capa atualizada com sucesso!', 'success');
+                    closeCoverImageModal();
+                    // Recarregar o modal do pedido para mostrar a nova imagem
+                    const orderId = document.querySelector('[data-order-id]').getAttribute('data-order-id');
+                    openOrderModal(orderId);
+                } else {
+                    showNotification(data.message || 'Erro ao atualizar imagem de capa', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                showNotification('Erro ao atualizar imagem de capa', 'error');
+            });
         }
 
         function submitDeliveryRequest(event) {

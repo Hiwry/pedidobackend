@@ -5,26 +5,40 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Novo Pedido - Personalização Serigrafia</title>
-    <!-- TODO: Em produção, substituir pelo Tailwind compilado via PostCSS -->
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-50">
     <x-app-header />
 
     <div class="max-w-6xl mx-auto p-6">
-        <!-- Progress Bar -->
+        <!-- Header -->
         <div class="mb-8">
-            <div class="flex items-center justify-between mb-2">
-                <span class="text-sm font-medium text-indigo-600">Etapa 3 de 5</span>
-                <span class="text-sm text-gray-500">Personalização - Serigrafia</span>
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center">
+                        <span class="text-white font-bold text-sm">S</span>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">Personalização - Serigrafia</h1>
+                        <p class="text-sm text-gray-600">Configuração de aplicações serigráficas</p>
+                    </div>
+                </div>
+                <a href="{{ route('orders.wizard.sewing') }}" class="text-gray-600 hover:text-gray-900 text-sm">
+                    ← Voltar
+                </a>
             </div>
-            <div class="w-full bg-gray-200 rounded-full h-2">
-                <div class="bg-indigo-600 h-2 rounded-full" style="width: 60%"></div>
+            
+            <!-- Progress Bar -->
+            <div class="w-full bg-gray-200 rounded-full h-1">
+                <div class="bg-gray-800 h-1 rounded-full" style="width: 60%"></div>
+            </div>
+            <div class="flex justify-between mt-2">
+                <span class="text-xs text-gray-500">Etapa 3 de 5</span>
+                <span class="text-xs text-gray-500">60%</span>
             </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <h1 class="text-2xl font-semibold mb-6">Personalização - Serigrafia</h1>
+        <div class="bg-white rounded-lg border border-gray-200 p-8">
 
             <form method="POST" action="{{ route('orders.wizard.customization') }}" id="customization-form" enctype="multipart/form-data">
                 @csrf
@@ -34,73 +48,63 @@
                 <input type="hidden" name="personalization_type" value="serigrafia">
 
                 <!-- Informações do Pedido -->
-                <div class="bg-blue-50 rounded-lg p-4 mb-6 border border-blue-200">
-                    <h3 class="font-semibold mb-2">Informações do Pedido</h3>
-                    <p class="text-sm">Total de camisas: <strong id="display-total-shirts">{{ session('total_shirts', 0) }}</strong></p>
+                <div class="bg-gray-50 rounded-lg p-4 mb-6 border border-gray-200">
+                    <h3 class="font-semibold text-gray-900 mb-2">Informações do Pedido</h3>
+                    <p class="text-sm text-gray-700">Total de camisas: <strong id="display-total-shirts" class="text-gray-900">{{ session('total_shirts', 0) }}</strong></p>
                 </div>
 
                 <!-- Nome da Arte -->
                 <div class="mb-6">
-                    <label for="art_name" class="block text-sm font-medium text-gray-700 mb-2">Nome da Arte *</label>
+                    <label for="art_name" class="block text-sm font-medium text-gray-900 mb-2">Nome da Arte *</label>
                     <input type="text" id="art_name" name="art_name" required
-                           class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                           class="w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 bg-white"
                            placeholder="Ex: Logo Empresa XYZ">
                 </div>
 
-                <!-- Imagem de Capa -->
-                <div class="mb-6">
-                    <label for="cover_image" class="block text-sm font-medium text-gray-700 mb-2">Imagem de Capa do Pedido</label>
-                    <input type="file" id="cover_image" name="cover_image" accept="image/*"
-                           class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                           onchange="previewCoverImage(event)">
-                    <div id="cover-preview" class="mt-3 hidden">
-                        <img id="cover-preview-img" src="" alt="Preview" class="max-w-xs rounded-lg border">
-                    </div>
-                </div>
 
                 <!-- Arquivos da Arte -->
                 <div class="mb-6">
-                    <label for="art_files" class="block text-sm font-medium text-gray-700 mb-2">Arquivos da Arte (múltiplos)</label>
+                    <label for="art_files" class="block text-sm font-medium text-gray-900 mb-2">Arquivos da Arte (múltiplos) *</label>
                     <input type="file" id="art_files" name="art_files[]" multiple
-                           class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                           required class="w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 bg-white"
                            onchange="displayFileList()">
-                    <p class="text-xs text-gray-500 mt-1">Você pode selecionar múltiplos arquivos (AI, PDF, PNG, JPG, etc)</p>
+                    <p class="text-xs text-gray-600 mt-1">Você pode selecionar múltiplos arquivos (AI, PDF, PNG, JPG, etc) - Obrigatório pelo menos 1 arquivo</p>
                     <div id="file-list" class="mt-3 space-y-2"></div>
                 </div>
 
                 <!-- Tamanhos de Aplicação Serigrafia -->
-                <div class="mb-6">
-                    <h3 class="text-lg font-semibold mb-4">Selecione o Tamanho da Aplicação</h3>
+                <div class="mb-8">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Selecione o Tamanho da Aplicação</h3>
                     <div class="grid grid-cols-3 gap-4" id="size-buttons">
                         <!-- Será preenchido via JavaScript -->
                     </div>
                 </div>
 
                 <!-- Aplicações Adicionadas -->
-                <div id="applications-container" class="mb-6">
-                    <h3 class="text-lg font-semibold mb-4">Aplicações Adicionadas</h3>
-                    <p class="text-gray-500 text-sm mb-3" id="no-applications">Nenhuma aplicação adicionada ainda.</p>
+                <div id="applications-container" class="mb-8">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Aplicações Adicionadas</h3>
+                    <p class="text-gray-600 text-sm mb-3" id="no-applications">Nenhuma aplicação adicionada ainda.</p>
                     <div id="applications-list" class="space-y-3">
                     </div>
                 </div>
 
                 <!-- Resumo de Valores -->
-                <div class="bg-green-50 rounded-lg p-4 border border-green-200 mb-6">
-                    <h3 class="font-semibold mb-3">Resumo de Valores</h3>
-                    <p class="text-xs text-gray-600 mb-2">* A partir de 3 aplicações: 2 com valor cheio + demais com 50% de desconto</p>
+                <div class="bg-gray-50 rounded-lg p-6 border border-gray-200 mb-8">
+                    <h3 class="font-semibold text-gray-900 mb-3">Resumo de Valores</h3>
+                    <p class="text-xs text-gray-600 mb-4">* A partir de 3 aplicações: 2 com valor cheio + demais com 50% de desconto</p>
                     <div id="price-breakdown" class="space-y-2 text-sm">
                         <!-- Será preenchido via JavaScript -->
                     </div>
-                    <div class="flex justify-between font-bold text-lg pt-3 border-t mt-3">
-                        <span>Total:</span>
-                        <span id="total-price">R$ 0,00</span>
+                    <div class="flex justify-between font-bold text-lg pt-4 border-t border-gray-300 mt-4">
+                        <span class="text-gray-900">Total:</span>
+                        <span id="total-price" class="text-gray-900">R$ 0,00</span>
                     </div>
                 </div>
 
-                <div class="flex justify-between pt-4">
-                    <a href="{{ route('orders.wizard.sewing') }}" class="px-4 py-2 text-gray-600 hover:text-gray-900">← Voltar</a>
+                <div class="flex justify-between pt-6 border-t border-gray-200">
+                    <a href="{{ route('orders.wizard.sewing') }}" class="px-6 py-3 text-gray-600 hover:text-gray-900 text-sm">← Voltar</a>
                     <button type="submit" 
-                            class="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            class="px-8 py-3 bg-gray-800 text-white rounded-md hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 text-sm font-medium">
                         Continuar →
                     </button>
                 </div>
@@ -110,25 +114,25 @@
 
     <!-- Modal para adicionar aplicação -->
     <div id="application-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <h3 class="text-xl font-semibold mb-4">Adicionar Aplicação - <span id="modal-size-name"></span></h3>
+        <div class="bg-white rounded-lg border border-gray-200 p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <h3 class="text-xl font-semibold text-gray-900 mb-6">Adicionar Aplicação - <span id="modal-size-name"></span></h3>
             
             <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-2">Local da Aplicação *</label>
-                <select id="modal-location" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                <label class="block text-sm font-medium text-gray-900 mb-2">Local da Aplicação *</label>
+                <select id="modal-location" class="w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 bg-white">
                     <option value="">Selecione</option>
                 </select>
             </div>
 
             <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-2">Quantidade de Cores * (máx. 6)</label>
+                <label class="block text-sm font-medium text-gray-900 mb-2">Quantidade de Cores * (máx. 6)</label>
                 <div class="grid grid-cols-3 gap-2">
-                    <button type="button" onclick="selectColorCount(1)" class="color-btn p-3 border-2 rounded hover:border-indigo-500" data-colors="1">1 Cor</button>
-                    <button type="button" onclick="selectColorCount(2)" class="color-btn p-3 border-2 rounded hover:border-indigo-500" data-colors="2">2 Cores</button>
-                    <button type="button" onclick="selectColorCount(3)" class="color-btn p-3 border-2 rounded hover:border-indigo-500" data-colors="3">3 Cores</button>
-                    <button type="button" onclick="selectColorCount(4)" class="color-btn p-3 border-2 rounded hover:border-indigo-500" data-colors="4">4 Cores</button>
-                    <button type="button" onclick="selectColorCount(5)" class="color-btn p-3 border-2 rounded hover:border-indigo-500" data-colors="5">5 Cores</button>
-                    <button type="button" onclick="selectColorCount(6)" class="color-btn p-3 border-2 rounded hover:border-indigo-500" data-colors="6">6 Cores</button>
+                    <button type="button" onclick="selectColorCount(1)" class="color-btn p-3 border-2 border-gray-300 rounded hover:border-gray-500 bg-white" data-colors="1">1 Cor</button>
+                    <button type="button" onclick="selectColorCount(2)" class="color-btn p-3 border-2 border-gray-300 rounded hover:border-gray-500 bg-white" data-colors="2">2 Cores</button>
+                    <button type="button" onclick="selectColorCount(3)" class="color-btn p-3 border-2 border-gray-300 rounded hover:border-gray-500 bg-white" data-colors="3">3 Cores</button>
+                    <button type="button" onclick="selectColorCount(4)" class="color-btn p-3 border-2 border-gray-300 rounded hover:border-gray-500 bg-white" data-colors="4">4 Cores</button>
+                    <button type="button" onclick="selectColorCount(5)" class="color-btn p-3 border-2 border-gray-300 rounded hover:border-gray-500 bg-white" data-colors="5">5 Cores</button>
+                    <button type="button" onclick="selectColorCount(6)" class="color-btn p-3 border-2 border-gray-300 rounded hover:border-gray-500 bg-white" data-colors="6">6 Cores</button>
                 </div>
                 <input type="hidden" id="modal-color-count" value="1">
             </div>
@@ -136,31 +140,31 @@
             <div class="mb-4">
                 <label class="flex items-center">
                     <input type="checkbox" id="modal-has-neon" onchange="updateModalPrices()"
-                           class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                    <span class="ml-2 text-sm font-medium text-gray-700">Cor Neon (+50% no valor do tamanho)</span>
+                           class="h-4 w-4 text-gray-800 focus:ring-gray-500 border-gray-300 rounded">
+                    <span class="ml-2 text-sm font-medium text-gray-900">Cor Neon (+50% no valor do tamanho)</span>
                 </label>
             </div>
 
             <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-2">Quantidade de Aplicações *</label>
+                <label class="block text-sm font-medium text-gray-900 mb-2">Quantidade de Aplicações *</label>
                 <input type="number" id="modal-quantity" min="1" value="1" 
-                       class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                       class="w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 bg-white">
             </div>
 
-            <div class="bg-gray-50 rounded p-3 mb-4">
-                <p class="text-sm text-gray-600">Valor base: <strong id="modal-base-price">R$ 0,00</strong></p>
-                <p class="text-sm text-gray-600" id="neon-info" style="display: none;">Acréscimo neon: <strong id="modal-neon-price">R$ 0,00</strong></p>
-                <p class="text-sm text-gray-600">Valor unitário: <strong id="modal-unit-price">R$ 0,00</strong></p>
-                <p class="text-sm text-gray-600">Subtotal: <strong id="modal-subtotal">R$ 0,00</strong></p>
+            <div class="bg-gray-50 rounded-lg p-4 mb-6 border border-gray-200">
+                <p class="text-sm text-gray-700">Valor base: <strong id="modal-base-price" class="text-gray-900">R$ 0,00</strong></p>
+                <p class="text-sm text-gray-700" id="neon-info" style="display: none;">Acréscimo neon: <strong id="modal-neon-price" class="text-gray-900">R$ 0,00</strong></p>
+                <p class="text-sm text-gray-700">Valor unitário: <strong id="modal-unit-price" class="text-gray-900">R$ 0,00</strong></p>
+                <p class="text-sm text-gray-700">Subtotal: <strong id="modal-subtotal" class="text-gray-900">R$ 0,00</strong></p>
             </div>
 
             <div class="flex justify-end space-x-3">
                 <button type="button" onclick="closeModal()" 
-                        class="px-4 py-2 text-gray-600 hover:text-gray-900">
+                        class="px-6 py-2 text-gray-600 hover:text-gray-900 text-sm">
                     Cancelar
                 </button>
                 <button type="button" onclick="addApplication()" 
-                        class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
+                        class="px-6 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-900 text-sm font-medium">
                     Adicionar
                 </button>
             </div>
@@ -173,7 +177,7 @@
         let colors = [];
         let applications = [];
         let totalShirts = {{ session('total_shirts', 0) }};
-        let currentSize = null;
+        let currentSize = '';
         let selectedColorCount = 1;
 
         // Apenas A4, ESCUDO e A3 para Serigrafia
@@ -213,10 +217,10 @@
             const container = document.getElementById('size-buttons');
             container.innerHTML = sizes.map(size => `
                 <button type="button" onclick="openModal(${size.id})" 
-                        class="p-4 border-2 border-gray-300 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition text-center">
-                    <div class="font-bold text-lg">${size.name}</div>
-                    <div class="text-sm text-gray-600">${size.dimensions}</div>
-                    <div class="text-xs text-indigo-600 mt-2" id="price-${size.id}">Carregando...</div>
+                        class="p-4 border-2 border-gray-300 rounded-lg hover:border-gray-500 hover:bg-gray-50 transition text-center bg-white">
+                    <div class="font-bold text-lg text-gray-900">${size.name}</div>
+                    <div class="text-sm text-gray-600">${size.dimensions || ''}</div>
+                    <div class="text-xs text-gray-800 mt-2" id="price-${size.id}">Carregando...</div>
                 </button>
             `).join('');
 
@@ -238,7 +242,8 @@
 
         function openModal(sizeId) {
             currentSize = sizes.find(s => s.id === sizeId);
-            document.getElementById('modal-size-name').textContent = `${currentSize.name} (${currentSize.dimensions})`;
+            const dimensions = currentSize.dimensions || '';
+            document.getElementById('modal-size-name').textContent = dimensions ? `${currentSize.name} (${dimensions})` : currentSize.name;
             document.getElementById('modal-quantity').value = 1;
             document.getElementById('modal-color-count').value = 1;
             document.getElementById('modal-has-neon').checked = false;
@@ -246,9 +251,9 @@
             
             // Reset color buttons
             document.querySelectorAll('.color-btn').forEach(btn => {
-                btn.classList.remove('border-indigo-600', 'bg-indigo-50');
+                btn.classList.remove('border-gray-800', 'bg-gray-100');
             });
-            document.querySelector('[data-colors="1"]').classList.add('border-indigo-600', 'bg-indigo-50');
+            document.querySelector('[data-colors="1"]').classList.add('border-gray-800', 'bg-gray-100');
             
             fetch(`/api/sublimation-price/${sizeId}/${totalShirts}`)
                 .then(r => r.json())
@@ -272,9 +277,9 @@
             
             // Update button styles
             document.querySelectorAll('.color-btn').forEach(btn => {
-                btn.classList.remove('border-indigo-600', 'bg-indigo-50');
+                btn.classList.remove('border-gray-800', 'bg-gray-100');
             });
-            document.querySelector(`[data-colors="${count}"]`).classList.add('border-indigo-600', 'bg-indigo-50');
+            document.querySelector(`[data-colors="${count}"]`).classList.add('border-gray-800', 'bg-gray-100');
             
             updateModalPrices();
         }
@@ -310,17 +315,6 @@
 
         document.getElementById('modal-quantity').addEventListener('input', updateModalPrices);
 
-        function previewCoverImage(event) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    document.getElementById('cover-preview-img').src = e.target.result;
-                    document.getElementById('cover-preview').classList.remove('hidden');
-                };
-                reader.readAsDataURL(file);
-            }
-        }
 
         function displayFileList() {
             const fileInput = document.getElementById('art_files');
@@ -410,13 +404,13 @@
             noApps.style.display = 'none';
             
             const html = applications.map((app, index) => `
-                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
+                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
                     <div class="flex-1">
-                        <div class="font-medium">${app.location_name}: ${app.quantity}x ${app.size_name} (${app.size_dimensions}) - ${app.color_count} ${app.color_count === 1 ? 'Cor' : 'Cores'}${app.has_neon ? ' + Neon' : ''}</div>
+                        <div class="font-medium text-gray-900">${app.location_name}: ${app.quantity}x ${app.size_name} (${app.size_dimensions}) - ${app.color_count} ${app.color_count === 1 ? 'Cor' : 'Cores'}${app.has_neon ? ' + Neon' : ''}</div>
                         <div class="text-sm text-gray-600">R$ ${app.unit_price.toFixed(2).replace('.', ',')} cada</div>
                     </div>
                     <button type="button" onclick="removeApplication(${index})" 
-                            class="text-red-600 hover:text-red-800 px-3 py-1">
+                            class="text-gray-600 hover:text-gray-800 px-3 py-1 text-sm">
                         Remover
                     </button>
                 </div>
@@ -458,8 +452,8 @@
 
                 return `
                     <div class="flex justify-between">
-                        <span>${item.location_name} - ${item.quantity}x ${item.size_name} (${item.color_count} ${item.color_count === 1 ? 'cor' : 'cores'}${item.has_neon ? ' + neon' : ''})${discount > 0 ? ` (-${discount}%)` : ''}</span>
-                        <span class="${discount > 0 ? 'text-green-600' : ''}">R$ ${finalPrice.toFixed(2).replace('.', ',')}</span>
+                        <span class="text-gray-700">${item.location_name} - ${item.quantity}x ${item.size_name} (${item.color_count} ${item.color_count === 1 ? 'cor' : 'cores'}${item.has_neon ? ' + neon' : ''})${discount > 0 ? ` (-${discount}%)` : ''}</span>
+                        <span class="${discount > 0 ? 'text-gray-900' : 'text-gray-900'}">R$ ${finalPrice.toFixed(2).replace('.', ',')}</span>
                     </div>
                 `;
             }).join('');

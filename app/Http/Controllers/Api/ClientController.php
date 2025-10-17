@@ -96,6 +96,43 @@ class ClientController extends Controller
         return response()->json($options);
     }
 
+    public function updateItemCoverImage(Request $request, $id): JsonResponse
+    {
+        try {
+            $request->validate([
+                'cover_image' => 'required|image|max:10240', // Máximo 10MB
+            ]);
+
+            $item = \App\Models\OrderItem::findOrFail($id);
+            
+            // Processar e salvar a imagem
+            $coverImage = $request->file('cover_image');
+            $coverImageName = time() . '_' . uniqid() . '_' . $coverImage->getClientOriginalName();
+            $coverImagePath = $coverImage->storeAs('orders/items/covers', $coverImageName, 'public');
+            
+            // Atualizar o item com a nova imagem de capa
+            $item->update(['cover_image' => $coverImagePath]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Imagem de capa atualizada com sucesso!',
+                'cover_image_path' => $coverImagePath
+            ]);
+            
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro de validação: ' . implode(', ', $e->errors()['cover_image'] ?? ['Arquivo inválido'])
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('Erro ao atualizar imagem de capa do item: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro interno do servidor'
+            ], 500);
+        }
+    }
+
     public function getSublimationSizes(): JsonResponse
     {
         $sizes = \App\Models\SublimationSize::where('active', true)

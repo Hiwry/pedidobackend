@@ -22,6 +22,8 @@ class OrderSublimation extends Model
         'discount_percent',
         'final_price',
         'application_image',
+        'seller_notes',
+        'color_details',
     ];
 
     protected $casts = [

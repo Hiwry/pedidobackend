@@ -28,13 +28,24 @@ class KanbanController extends Controller
         // Aplicar busca se fornecida
         if ($search) {
             $query->where(function($q) use ($search) {
+                // Buscar por ID do pedido (com e sem zeros à esquerda)
                 $q->where('id', 'like', "%{$search}%")
-                  ->orWhereHas('client', function($q2) use ($search) {
+                  ->orWhereRaw("CAST(id AS CHAR) LIKE ?", ["%{$search}%"]);
+                
+                // Buscar por dados do cliente
+                $q->orWhereHas('client', function($q2) use ($search) {
                       $q2->where('name', 'like', "%{$search}%")
                          ->orWhere('phone_primary', 'like', "%{$search}%");
-                  })
-                  ->orWhereHas('items', function($q3) use ($search) {
+                  });
+                
+                // Buscar por nome da arte nos itens
+                $q->orWhereHas('items', function($q3) use ($search) {
                       $q3->where('art_name', 'like', "%{$search}%");
+                  });
+                
+                // Buscar por nome da arte nas personalizações (sublimations)
+                $q->orWhereHas('items.sublimations', function($q4) use ($search) {
+                      $q4->where('art_name', 'like', "%{$search}%");
                   });
             });
         }

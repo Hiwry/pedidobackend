@@ -118,6 +118,7 @@ class OrderWizardController extends Controller
             'quantity' => 'required|integer|min:1',
             'unit_price' => 'required|numeric|min:0',
             'item_cover_image' => 'nullable|image|max:10240',
+            'art_notes' => 'nullable|string|max:1000',
         ]);
 
         $order = Order::with('items')->findOrFail(session('current_order_id'));
@@ -156,6 +157,7 @@ class OrderWizardController extends Controller
             'unit_price' => $validated['unit_price'],
             'total_price' => $validated['unit_price'] * $validated['quantity'],
             'cover_image' => $coverImagePath,
+            'art_notes' => $validated['art_notes'] ?? null,
         ]);
         $order->items()->save($item);
 
@@ -186,6 +188,7 @@ class OrderWizardController extends Controller
             'quantity' => 'required|integer|min:1',
             'unit_price' => 'required|numeric|min:0',
             'item_cover_image' => 'nullable|image|max:10240',
+            'art_notes' => 'nullable|string|max:1000',
         ]);
 
         $order = Order::with('items')->findOrFail(session('current_order_id'));
@@ -242,6 +245,7 @@ class OrderWizardController extends Controller
             'unit_price' => $basePrice,
             'total_price' => $totalQuantity * $basePrice,
             'cover_image' => $coverImagePath,
+            'art_notes' => $validated['art_notes'] ?? null,
         ]);
 
         $order->update([
@@ -364,7 +368,7 @@ class OrderWizardController extends Controller
             'item_id' => 'required|exists:order_items,id',
             'personalization_type' => 'required|string',
             'personalization_id' => 'required|integer',
-            'art_name' => 'nullable|string|max:255',
+            'art_name' => 'required|string|max:255',
             'location' => 'required',
             'size' => 'required|string',
             'quantity' => 'required|integer|min:1',
@@ -372,7 +376,10 @@ class OrderWizardController extends Controller
             'unit_price' => 'nullable|numeric|min:0',
             'final_price' => 'nullable|numeric|min:0',
             'application_image' => 'nullable|image|max:10240',
-            'art_files.*' => 'nullable|file|max:51200', // Máximo 50MB por arquivo
+            'art_files' => 'required|array|min:1',
+            'art_files.*' => 'required|file|max:51200', // Máximo 50MB por arquivo
+            'color_details' => 'nullable|string|max:500',
+            'seller_notes' => 'nullable|string|max:1000',
         ]);
 
         $order = Order::with('items')->findOrFail(session('current_order_id'));
@@ -408,6 +415,8 @@ class OrderWizardController extends Controller
             'discount_percent' => 0,
             'final_price' => $validated['final_price'] ?? 0,
             'application_image' => $applicationImagePath,
+            'color_details' => $validated['color_details'] ?? null,
+            'seller_notes' => $validated['seller_notes'] ?? null,
         ]);
 
         // Processar arquivos da arte (CDR, PDF, etc.)
@@ -557,8 +566,26 @@ class OrderWizardController extends Controller
             
             $order = Order::findOrFail($orderId);
             
-            // Confirmar o pedido (tirar do modo rascunho)
-            $order->update(['is_draft' => false]);
+            // Processar imagem de capa se fornecida
+            $coverImagePath = null;
+            if ($request->hasFile('order_cover_image')) {
+                $coverImage = $request->file('order_cover_image');
+                $coverImageName = time() . '_' . uniqid() . '_' . $coverImage->getClientOriginalName();
+                $coverImagePath = $coverImage->storeAs('orders/covers', $coverImageName, 'public');
+            }
+            
+            // Confirmar o pedido (tirar do modo rascunho) e atualizar imagem de capa
+            $updateData = ['is_draft' => false];
+            if ($coverImagePath) {
+                $updateData['cover_image'] = $coverImagePath;
+            }
+            
+            // Processar checkbox de evento
+            if ($request->has('is_event') && $request->input('is_event') == '1') {
+                $updateData['contract_type'] = 'EVENTO';
+            }
+            
+            $order->update($updateData);
             
             // Criar log de confirmação
             \App\Models\OrderLog::create([

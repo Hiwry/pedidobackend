@@ -282,9 +282,9 @@
 
                 <!-- Nome da Arte -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Nome da Arte</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nome da Arte *</label>
                     <input type="text" id="art_name" name="art_name" placeholder="Ex: Logo Empresa, Arte Costas, etc." 
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                           required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
                     <p class="mt-1 text-xs text-gray-500">Este nome aparecerá no kanban de produção</p>
                 </div>
 
@@ -314,11 +314,12 @@
                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
                 </div>
 
-                <!-- Cores (para Serigrafia) -->
+                <!-- Cores (para Serigrafia e Emborrachado) -->
                 <div id="colorCountField" class="hidden">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Número de Cores</label>
                     <input type="number" id="color_count" name="color_count" min="1" 
                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                    <p class="mt-1 text-xs text-gray-500">Apenas para Serigrafia e Emborrachado</p>
                 </div>
 
                 <!-- Preço Calculado -->
@@ -350,12 +351,30 @@
 
                 <!-- Upload de Arquivos (CorelDRAW, PDF, Excel, etc.) -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Arquivos da Arte (CorelDRAW, PDF, Excel, etc.)</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Arquivos da Arte (CorelDRAW, PDF, Excel, etc.) *</label>
                     <input type="file" id="art_files" name="art_files[]" multiple
                            accept=".cdr,.pdf,.ai,.eps,.svg,.xlsx,.xls,.doc,.docx,.zip,.rar,.png,.jpg,.jpeg"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
-                    <p class="mt-1 text-xs text-gray-500">Você pode selecionar múltiplos arquivos. Aceita: CDR, PDF, AI, EPS, SVG, Excel, Word, ZIP, imagens</p>
+                           required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                    <p class="mt-1 text-xs text-gray-500">Você pode selecionar múltiplos arquivos. Aceita: CDR, PDF, AI, EPS, SVG, Excel, Word, ZIP, imagens - Obrigatório pelo menos 1 arquivo</p>
                     <div id="selected_files_list" class="mt-2 space-y-1"></div>
+                </div>
+
+                <!-- Detalhes das Cores -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Detalhes das Cores (opcional)</label>
+                    <textarea id="color_details" name="color_details" rows="2" 
+                              placeholder="Ex: Verde limão, Azul marinho, Branco, etc."
+                              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                    <p class="mt-1 text-xs text-gray-500">Especifique as cores exatas que serão utilizadas na aplicação</p>
+                </div>
+
+                <!-- Observações do Vendedor -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Observações do Vendedor (opcional)</label>
+                    <textarea id="seller_notes" name="seller_notes" rows="2" 
+                              placeholder="Ex: Aplicar com cuidado, cliente pediu urgência, etc."
+                              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                    <p class="mt-1 text-xs text-gray-500">Informações importantes para a produção</p>
                 </div>
 
                 <!-- Botões -->
@@ -375,9 +394,9 @@
     </div>
 
     <script>
-        let currentItemId = null;
-        let currentPersonalizationType = null;
-        let currentPersonalizationId = null;
+        let currentItemId = '';
+        let currentPersonalizationType = '';
+        let currentPersonalizationId = '';
 
         // Dados de tamanhos por tipo
         const personalizationSizes = @json($personalizationData);
@@ -392,8 +411,8 @@
             document.getElementById('modal_personalization_id').value = persId;
             document.getElementById('modalTitle').textContent = `Adicionar ${persType}`;
             
-            // Mostrar/ocultar campo de cores
-            if (persType === 'SERIGRAFIA') {
+            // Mostrar/ocultar campo de cores (apenas para Serigrafia e Emborrachado)
+            if (persType === 'SERIGRAFIA' || persType === 'EMBORRACHADO') {
                 document.getElementById('colorCountField').classList.remove('hidden');
             } else {
                 document.getElementById('colorCountField').classList.add('hidden');
@@ -414,9 +433,9 @@
 
         function closePersonalizationModal() {
             document.getElementById('personalizationModal').classList.add('hidden');
-            currentItemId = null;
-            currentPersonalizationType = null;
-            currentPersonalizationId = null;
+            currentItemId = '';
+            currentPersonalizationType = '';
+            currentPersonalizationId = '';
         }
 
         function loadSizes(persType) {
@@ -433,11 +452,13 @@
                 personalizationSizes[typeKey].sizes.forEach(size => {
                     const option = document.createElement('option');
                     option.value = size.size_name;
-                    option.textContent = `${size.size_name} (${size.size_dimensions})`;
+                    const dimensions = size.size_dimensions || '';
+                    option.textContent = dimensions ? `${size.size_name} (${dimensions})` : size.size_name;
                     sizeSelect.appendChild(option);
                 });
             }
         }
+
 
         // Calcular preço
         async function calculatePrice() {

@@ -23,6 +23,7 @@ class Order extends Model
         'delivery_fee',
         'total',
         'notes',
+        'cover_image',
         'is_draft',
         'client_token',
         'client_confirmed',
@@ -73,6 +74,18 @@ class Order extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Accessor para retornar o nome do vendedor automaticamente
+     * Se o campo seller estiver vazio, retorna o nome do usuário que criou o pedido
+     */
+    public function getSellerAttribute($value)
+    {
+        if (empty($value) && $this->user) {
+            return $this->user->name;
+        }
+        return $value;
     }
 
     public function items(): HasMany

@@ -69,7 +69,7 @@
                         <p class="text-sm text-gray-600">Gerencie os itens de costura e personalização</p>
                     </div>
                 </div>
-            </div>
+        </div>
 
             <div class="p-6">
                 <!-- Lista de Itens Atuais -->
@@ -93,7 +93,7 @@
                                             Editar
                                         </button>
                                         <form method="POST" action="{{ route('orders.edit-wizard.sewing') }}" class="inline">
-                                            @csrf
+                    @csrf
                                             <input type="hidden" name="action" value="delete_item">
                                             <input type="hidden" name="item_id" value="{{ $item->id }}">
                                             <button type="submit" onclick="return confirm('Deseja remover este item?')" 
@@ -194,92 +194,86 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
                         </button>
-                    </div>
-                
+        </div>
+
                 <form method="POST" action="{{ route('orders.edit-wizard.sewing') }}" id="editItemForm" enctype="multipart/form-data">
                     @csrf
                     <input type="hidden" name="action" value="update_item">
                     <input type="hidden" name="editing_item_id" id="editingItemId">
                     
                     <div class="space-y-6">
-                        <!-- Personalização -->
+                    <!-- Personalização -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Personalização *</label>
                             <div class="grid grid-cols-2 gap-3" id="personalizacao-options">
                                 <!-- Será preenchido via JavaScript -->
-                            </div>
-                        </div>
+                </div>
+            </div>
 
-                        <!-- Tecido -->
+                    <!-- Tecido -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Tecido *</label>
                             <select name="tecido" id="tecido" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-500" required>
-                                <option value="">Selecione o tecido</option>
-                            </select>
-                        </div>
-
-                        <!-- Tipo de Tecido -->
+                            <option value="">Selecione o tecido</option>
+                        </select>
+                                    </div>
+                                    
+                    <!-- Tipo de Tecido -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de Tecido</label>
                             <select name="tipo_tecido" id="tipo_tecido" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                                <option value="">Selecione o tipo</option>
-                            </select>
-                        </div>
+                            <option value="">Selecione o tipo</option>
+                                            </select>
+                                        </div>
 
                         <!-- Cor -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Cor *</label>
                             <select name="cor" id="cor" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-500" required>
-                                <option value="">Selecione a cor</option>
-                            </select>
-                    </div>
+                            <option value="">Selecione a cor</option>
+                        </select>
+                                        </div>
 
                         <!-- Tipo de Corte -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de Corte *</label>
                             <select name="tipo_corte" id="tipo_corte" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-500" required>
-                                <option value="">Selecione o tipo de corte</option>
-                            </select>
-                        </div>
+                            <option value="">Selecione o tipo de corte</option>
+                        </select>
+                                        </div>
 
                         <!-- Detalhe -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Detalhe</label>
                             <select name="detalhe" id="detalhe" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                                <option value="">Selecione o detalhe</option>
-                            </select>
-                    </div>
+                            <option value="">Selecione o detalhe</option>
+                                            </select>
+                                        </div>
 
                         <!-- Gola -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Gola *</label>
                             <select name="gola" id="gola" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-500" required>
-                                <option value="">Selecione a gola</option>
-                            </select>
-                        </div>
+                            <option value="">Selecione a gola</option>
+                                            </select>
+                                        </div>
 
                         <!-- Tamanhos -->
-                        <div>
+                                        <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Tamanhos *</label>
                             <div class="grid grid-cols-4 gap-3" id="tamanhos-container">
                                 <!-- Será preenchido via JavaScript -->
-                            </div>
-                        </div>
+                                        </div>
+                                    </div>
 
                         <!-- Preço Unitário -->
-                        <div>
+                            <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Preço Unitário *</label>
                             <input type="number" name="unit_price" id="unit_price" step="0.01" min="0" 
                                    class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-500" required>
                         </div>
 
-                        <!-- Imagem de Capa -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Imagem de Capa</label>
-                            <input type="file" name="item_cover_image" id="item_cover_image" accept="image/*" 
-                                   class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                    </div>
-                </div>
+    </div>
 
                     <div class="flex justify-end space-x-3 mt-6">
                         <button type="button" onclick="closeEditModal()" 
@@ -289,12 +283,12 @@
                         <button type="submit" 
                                 class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-1 focus:ring-indigo-500">
                             Salvar Alterações
-                    </button>
+                        </button>
                     </div>
                 </form>
-            </div>
         </div>
     </div>
+</div>
 
 <script>
         let currentItemData = null;

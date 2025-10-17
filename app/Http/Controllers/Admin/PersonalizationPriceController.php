@@ -40,7 +40,6 @@ class PersonalizationPriceController extends Controller
         if ($type === 'SERIGRAFIA') {
             $sizes = PersonalizationPrice::getSizesForType($type);
             $prices = PersonalizationPrice::where('personalization_type', $type)
-                ->where('active', true)
                 ->orderBy('size_name')
                 ->orderBy('quantity_from')
                 ->get()
@@ -60,131 +59,122 @@ class PersonalizationPriceController extends Controller
 
         $sizes = PersonalizationPrice::getSizesForType($type);
         $prices = PersonalizationPrice::where('personalization_type', $type)
-            ->where('active', true)
-            ->orderBy('size_name')
             ->orderBy('quantity_from')
-            ->get()
-            ->groupBy('size_name');
+            ->orderBy('size_name')
+            ->get();
+
+        // Debug: log dos dados carregados
+        \Log::info('=== EDIT DEBUG FOR ' . $type . ' ===');
+        \Log::info('Prices loaded:', $prices->toArray());
+        \Log::info('Prices count: ' . $prices->count());
 
         return view('admin.personalization-prices.edit', compact('type', 'types', 'sizes', 'prices'));
     }
 
     public function update(Request $request, $type): RedirectResponse
     {
-        // Se for SERIGRAFIA, usar validação diferente (formato de tabela)
-        if ($type === 'SERIGRAFIA') {
-            $request->validate([
-                'prices' => 'required|array',
-                'colors' => 'nullable|array',
+        // Lógica unificada para todos os tipos
+
+        // Debug: log dos dados recebidos
+        \Log::info('=== UPDATE DEBUG FOR ' . $type . ' ===');
+        \Log::info('Request all data:', $request->all());
+        \Log::info('Prices data:', $request->prices ?? []);
+        
+        // Detectar formato dos dados (novo ou antigo)
+        $isNewFormat = isset($request->prices[0]['quantity_from']);
+        
+        if ($isNewFormat) {
+            // Novo formato: quantity_from, quantity_to, tamanhos dinâmicos
+            $validated = $request->validate([
+                'prices' => 'required|array|min:1',
+                'prices.*.quantity_from' => 'required|integer|min:1',
+                'prices.*.quantity_to' => 'nullable|integer|min:1',
             ]);
-
-            // Log para debug (remover depois)
-            \Log::info('=== SERIGRAFIA UPDATE DEBUG ===');
-            \Log::info('Request all data:', $request->all());
-            \Log::info('Prices data:', $request->prices);
-            \Log::info('Colors data:', $request->colors ?? []);
-            \Log::info('Prices count: ' . count($request->prices));
-            \Log::info('Colors count: ' . count($request->colors ?? []));
-
-            // Deletar preços existentes
-            PersonalizationPrice::where('personalization_type', $type)->delete();
-
-            // Processar tabela de preços
-            $sizes = ['ESCUDO', 'A4', 'A3'];
-            
-            foreach ($request->prices as $rowIndex => $row) {
-                // Pegar from e to da linha (são comuns para todos os tamanhos)
-                $qtyFrom = $row['from'] ?? null;
-                $qtyTo = $row['to'] ?? null;
-                
-                if (!$qtyFrom) {
-                    continue; // Pular linhas sem quantidade mínima
-                }
-                
-                foreach ($sizes as $size) {
-                    if (isset($row[$size]) && !empty($row[$size])) {
-                        $price = $row[$size];
-                        
-                        if ($price > 0) {
-                            PersonalizationPrice::create([
-                                'personalization_type' => $type,
-                                'size_name' => $size,
-                                'size_dimensions' => null,
-                                'quantity_from' => $qtyFrom,
-                                'quantity_to' => $qtyTo,
-                                'price' => $price,
-                            ]);
-                        }
-                    }
-                }
-            }
-
-            // Processar preços de cores
-            // Limpar todas as cores antigas
-            \App\Models\SerigraphyColor::truncate();
-            
-            // Criar cor base (1 cor incluída - preço 0)
-            \App\Models\SerigraphyColor::create([
-                'name' => '1 Cor',
-                'price' => 0,
-                'is_neon' => false,
-                'order' => 1,
-                'active' => true,
+            $validated['prices'] = $request->prices;
+        } else {
+            // Formato antigo: from, to, ESCUDO, A4, A3
+            $validated = $request->validate([
+                'prices' => 'required|array|min:1',
+                'prices.*.from' => 'required|integer|min:1',
+                'prices.*.to' => 'nullable|integer|min:1',
             ]);
-            
-            // Criar cores adicionais baseadas nas faixas de quantidade
-            if ($request->has('colors')) {
-                foreach ($request->colors as $colorIndex => $colorData) {
-                    if (isset($colorData['price']) && !empty($colorData['price']) && $colorData['price'] > 0) {
-                        // Pegar from e to correspondente da mesma linha de preços
-                        $qtyFrom = $request->prices[$colorIndex]['from'] ?? 0;
-                        $qtyTo = $request->prices[$colorIndex]['to'] ?? 9999;
-                        
-                        \App\Models\SerigraphyColor::create([
-                            'name' => "COR + ({$qtyFrom}-{$qtyTo})",
-                            'price' => $colorData['price'],
-                            'is_neon' => false,
-                            'order' => $colorIndex + 2, // +2 porque a primeira cor é ordem 1
-                            'active' => true,
-                        ]);
-                    }
-                }
-            }
-
-            return redirect()->route('admin.personalization-prices.index')
-                ->with('success', 'Tabela de preços de Serigrafia atualizada com sucesso!');
+            $validated['prices'] = $request->prices;
         }
-
-        // Validação padrão para outros tipos
-        $validated = $request->validate([
-            'prices' => 'required|array',
-            'prices.*.size_name' => 'required|string',
-            'prices.*.size_dimensions' => 'nullable|string',
-            'prices.*.quantity_from' => 'required|integer|min:1',
-            'prices.*.quantity_to' => 'nullable|integer|min:1|gte:prices.*.quantity_from',
-            'prices.*.price' => 'required|numeric|min:0',
-        ]);
+        
+        \Log::info('Validated data:', $validated);
 
         // Deletar preços existentes para este tipo
         PersonalizationPrice::where('personalization_type', $type)->delete();
 
-        // Criar novos preços
+        // Criar novos preços para cada faixa de quantidade e cada tamanho
         foreach ($validated['prices'] as $priceData) {
-            if (!empty($priceData['size_name']) && !empty($priceData['quantity_from']) && !empty($priceData['price'])) {
-                PersonalizationPrice::create([
-                    'personalization_type' => $type,
-                    'size_name' => $priceData['size_name'],
-                    'size_dimensions' => $priceData['size_dimensions'],
-                    'quantity_from' => $priceData['quantity_from'],
-                    'quantity_to' => $priceData['quantity_to'] ?: null,
-                    'price' => $priceData['price'],
-                ]);
+            if ($isNewFormat) {
+                // Novo formato: quantity_from, quantity_to, tamanhos dinâmicos
+                $quantityFrom = $priceData['quantity_from'];
+                $quantityTo = $priceData['quantity_to'] ?? null;
+                
+                // Processar todos os campos que não são quantity_from ou quantity_to
+                foreach ($priceData as $key => $value) {
+                    if ($key !== 'quantity_from' && $key !== 'quantity_to' && !empty($value)) {
+                        $newPrice = PersonalizationPrice::create([
+                            'personalization_type' => $type,
+                            'size_name' => strtoupper($key),
+                            'size_dimensions' => null,
+                            'quantity_from' => $quantityFrom,
+                            'quantity_to' => $quantityTo,
+                            'price' => $value,
+                        ]);
+                        
+                        \Log::info('Created price record (new format):', $newPrice->toArray());
+                    }
+                }
+            } else {
+                // Formato antigo: from, to, ESCUDO, A4, A3
+                $quantityFrom = $priceData['from'];
+                $quantityTo = $priceData['to'] ?? null;
+                
+                // Processar tamanhos fixos
+                $sizes = ['ESCUDO', 'A4', 'A3'];
+                foreach ($sizes as $size) {
+                    if (isset($priceData[$size]) && !empty($priceData[$size])) {
+                        $newPrice = PersonalizationPrice::create([
+                            'personalization_type' => $type,
+                            'size_name' => $size,
+                            'size_dimensions' => null,
+                            'quantity_from' => $quantityFrom,
+                            'quantity_to' => $quantityTo,
+                            'price' => $priceData[$size],
+                        ]);
+                        
+                        \Log::info('Created price record (old format):', $newPrice->toArray());
+                    }
+                }
             }
         }
+        
+        // Processar cores separadas se for SERIGRAFIA
+        if ($type === 'SERIGRAFIA' && $request->has('color_prices')) {
+            \Log::info('Processing separate color prices for SERIGRAFIA:', $request->color_prices);
+            
+            // Atualizar preços das cores individualmente
+            foreach ($request->color_prices as $colorId => $price) {
+                if (!empty($price)) {
+                    \App\Models\SerigraphyColor::where('id', $colorId)
+                        ->update(['price' => $price]);
+                    
+                    \Log::info("Updated color ID {$colorId} to {$price}");
+                }
+            }
+        }
+        
+        // Debug: verificar se os dados foram salvos
+        $savedPrices = PersonalizationPrice::where('personalization_type', $type)->get();
+        \Log::info('Total prices saved for ' . $type . ':', $savedPrices->toArray());
 
-        return redirect()->route('admin.personalization-prices.index')
+        return redirect()->route('admin.personalization-prices.edit', $type)
             ->with('success', 'Preços atualizados com sucesso!');
     }
+
 
     public function addPriceRow(Request $request): View
     {

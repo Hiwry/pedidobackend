@@ -71,22 +71,6 @@
                         </div>
                     </div>
 
-                    <!-- Imagem de Capa -->
-                    <div class="space-y-3">
-                        <div class="flex items-center space-x-2 mb-3">
-                            <div class="w-5 h-5 bg-indigo-100 rounded-md flex items-center justify-center">
-                                <svg class="w-3 h-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                </svg>
-                            </div>
-                            <h2 class="text-sm font-medium text-gray-900">Imagem de Capa</h2>
-                        </div>
-
-                        <div class="bg-gray-50 rounded-md p-4">
-                            <input type="file" name="cover_image" accept="image/*"
-                                   class="w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100">
-                        </div>
-                    </div>
 
                     <!-- Arquivos da Arte -->
                     <div class="space-y-3">

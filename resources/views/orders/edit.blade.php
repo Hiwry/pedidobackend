@@ -85,15 +85,15 @@
                                 <div>
                                     <h3 class="text-sm font-medium text-gray-900">Buscar Cliente Existente</h3>
                                     <p class="text-xs text-gray-600">Encontre um cliente já cadastrado no sistema</p>
-                                </div>
+                </div>
                             </div>
                             <button @click="showSearch = !showSearch" 
                                     class="px-3 py-1 text-xs font-medium text-indigo-600 hover:text-indigo-800 transition-colors">
                                 <span x-show="!showSearch">Mostrar</span>
                                 <span x-show="showSearch">Ocultar</span>
                             </button>
-                        </div>
-                        
+            </div>
+
                         <div x-show="showSearch" x-transition class="space-y-3">
                             <div class="flex gap-2">
                                 <div class="flex-1 relative">
@@ -102,18 +102,18 @@
                                     <div class="absolute inset-y-0 right-0 pr-2 flex items-center">
                                         <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                                        </svg>
-                                    </div>
-                                </div>
+                        </svg>
+                        </div>
+                        </div>
                                 <button type="button" onclick="searchClient()" 
                                         class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all text-sm font-medium">
                                     Buscar
                                 </button>
-                            </div>
+                        </div>
                             <div id="search-results" class="space-y-1"></div>
                         </div>
                     </div>
-            </div>
+                </div>
 
                 <!-- Formulário -->
                 <form method="POST" action="{{ route('orders.edit-wizard.client') }}" id="client-form" class="space-y-6">
@@ -129,10 +129,10 @@
                         </svg>
                             </div>
                             <h2 class="text-sm font-medium text-gray-900">Informações Básicas</h2>
-                        </div>
+                                </div>
 
                         <div class="bg-gray-50 rounded-md p-4">
-                            <div>
+                                <div>
                                 <label for="name" class="block text-xs font-medium text-gray-700 mb-1">Nome Completo *</label>
                                 <input id="name" name="name" type="text"
                                        value="{{ $order->client->name }}"
@@ -146,9 +146,9 @@
                                         {{ $message }}
                                     </p>
                                 @enderror
+                                </div>
+                                </div>
                             </div>
-                        </div>
-                    </div>
 
                     <!-- Seção: Contato -->
                     <div class="space-y-3">
@@ -159,7 +159,7 @@
                                 </svg>
                             </div>
                             <h2 class="text-sm font-medium text-gray-900">Informações de Contato</h2>
-                        </div>
+                            </div>
 
                         <div class="bg-gray-50 rounded-md p-4 space-y-4">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -169,15 +169,15 @@
                                            value="{{ $order->client->phone_primary }}"
                                            placeholder="(00) 00000-0000"
                                            class="w-full px-3 py-2 rounded-md border border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-sm">
-                                </div>
+                        </div>
                                 <div>
                                     <label for="phone_secondary" class="block text-xs font-medium text-gray-700 mb-1">Telefone Secundário</label>
                                     <input id="phone_secondary" name="phone_secondary" type="text"
                                            value="{{ $order->client->phone_secondary }}"
                                            placeholder="(00) 00000-0000"
                                            class="w-full px-3 py-2 rounded-md border border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-sm">
-                                </div>
-                            </div>
+                    </div>
+                </div>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
@@ -186,17 +186,17 @@
                                            value="{{ $order->client->email }}"
                                            placeholder="cliente@email.com"
                                            class="w-full px-3 py-2 rounded-md border border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-sm">
-                                </div>
-                                <div>
+                        </div>
+                        <div>
                                     <label for="cpf_cnpj" class="block text-xs font-medium text-gray-700 mb-1">CPF/CNPJ</label>
                                     <input id="cpf_cnpj" name="cpf_cnpj" type="text"
                                            value="{{ $order->client->cpf_cnpj }}"
                                            placeholder="000.000.000-00"
                                            class="w-full px-3 py-2 rounded-md border border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-sm">
                                 </div>
-                            </div>
                         </div>
                     </div>
+                </div>
 
                     <!-- Seção: Endereço -->
                     <div class="space-y-3">
@@ -205,7 +205,7 @@
                                 <svg class="w-3 h-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                </svg>
+                        </svg>
                             </div>
                             <h2 class="text-sm font-medium text-gray-900">Endereço</h2>
                         </div>
@@ -218,16 +218,16 @@
                                        placeholder="Rua, número, bairro"
                                        class="w-full px-3 py-2 rounded-md border border-gray-300 focus:border-gray-500 focus:ring-1 focus:ring-gray-500 transition-all text-sm">
                             </div>
-
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
                                     <label for="city" class="block text-xs font-medium text-gray-700 mb-1">Cidade</label>
                                     <input id="city" name="city" type="text"
                                            value="{{ $order->client->city }}"
                                            placeholder="Nome da cidade"
                                            class="w-full px-3 py-2 rounded-md border border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-sm">
-                                </div>
-                                <div>
+                        </div>
+                        <div>
                                     <label for="state" class="block text-xs font-medium text-gray-700 mb-1">Estado</label>
                                     <select id="state" name="state"
                                             class="w-full px-3 py-2 rounded-md border border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-sm">
@@ -267,10 +267,10 @@
                                            value="{{ $order->client->zip_code }}"
                                            placeholder="00000-000"
                                            class="w-full px-3 py-2 rounded-md border border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-sm">
-                                </div>
-                            </div>
+                        </div>
                         </div>
                     </div>
+                </div>
 
                     <!-- Seção: Categoria -->
                     <div class="space-y-3">
@@ -278,10 +278,10 @@
                             <div class="w-5 h-5 bg-indigo-100 rounded-md flex items-center justify-center">
                                 <svg class="w-3 h-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
-                                </svg>
+                        </svg>
                             </div>
                             <h2 class="text-sm font-medium text-gray-900">Categoria do Cliente</h2>
-                        </div>
+                </div>
 
                         <div class="bg-gray-50 rounded-md p-4">
                             <div>
@@ -297,26 +297,26 @@
                                 </select>
                             </div>
                         </div>
-                    </div>
+                </div>
 
-                    <!-- Botões de Ação -->
+                <!-- Botões de Ação -->
                     <div class="flex justify-between items-center pt-4 border-t border-gray-200">
-                        <a href="{{ route('orders.show', $order->id) }}" 
+                    <a href="{{ route('orders.show', $order->id) }}" 
                            class="flex items-center px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-all text-sm font-medium">
                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                             </svg>
-                            Cancelar
-                        </a>
-                        <button type="submit" 
+                        Cancelar
+                    </a>
+                    <button type="submit" 
                                 class="flex items-center px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all text-sm font-medium">
                             Continuar
                             <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
                             </svg>
-                        </button>
-                    </div>
-                </form>
+                    </button>
+                </div>
+            </form>
                 </div>
 
         </div>
@@ -382,20 +382,20 @@
                                     <svg class="w-3 h-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                                     </svg>
-                                </div>
+                        </div>
                                 <div class="flex-1">
                                     <div class="text-sm font-medium text-gray-900">${client.name}</div>
                                     <div class="text-xs text-gray-600">
                                         ${client.phone_primary || ''} ${client.email ? '• ' + client.email : ''}
-                                    </div>
-                                </div>
+                        </div>
+                    </div>
                                 <div class="text-indigo-600">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                                     </svg>
-                                </div>
-                            </div>
                         </div>
+                        </div>
+                    </div>
                     `).join('');
                 })
                 .catch(error => {

@@ -9,26 +9,11 @@ Route::prefix('pedido')->name('client.order.')->group(function () {
     Route::post('/{token}/confirmar', [\App\Http\Controllers\ClientOrderController::class, 'confirm'])->name('confirm');
 });
 
-
-
-
-
 // Todas as rotas autenticadas
 Route::middleware('auth')->group(function () {
     // Home/Dashboard
     Route::get('/', [\App\Http\Controllers\DashboardController::class, 'index'])->name('home');
     Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
-    
-    // Clientes
-    Route::resource('clientes', \App\Http\Controllers\ClientController::class)->names([
-        'index' => 'clients.index',
-        'create' => 'clients.create',
-        'store' => 'clients.store',
-        'show' => 'clients.show',
-        'edit' => 'clients.edit',
-        'update' => 'clients.update',
-        'destroy' => 'clients.destroy',
-    ]);
     
     // Lista de Pedidos
     Route::get('/pedidos', [\App\Http\Controllers\OrderController::class, 'index'])->name('orders.index');
@@ -50,9 +35,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/pedidos/{id}/solicitar-edicao', [\App\Http\Controllers\OrderController::class, 'requestEdit'])->name('orders.request-edit');
     Route::post('/pedidos/{id}/aprovar-edicao', [\App\Http\Controllers\OrderController::class, 'approveEdit'])->name('orders.approve-edit');
     Route::post('/pedidos/{id}/rejeitar-edicao', [\App\Http\Controllers\OrderController::class, 'rejectEdit'])->name('orders.reject-edit');
-    Route::get('/pedidos/{id}/editar', [\App\Http\Controllers\OrderEditWizardController::class, 'start'])->name('orders.edit');
+    Route::get('/pedidos/{id}/editar', [\App\Http\Controllers\OrderController::class, 'editOrder'])->name('orders.edit');
     Route::put('/pedidos/{id}/atualizar', [\App\Http\Controllers\OrderController::class, 'updateOrder'])->name('orders.update');
-    
+
+
     // Wizard de Pedido (5 etapas)
     Route::prefix('pedidos')->group(function () {
         Route::get('novo', [\App\Http\Controllers\OrderWizardController::class, 'start'])->name('orders.wizard.start');
@@ -65,15 +51,6 @@ Route::middleware('auth')->group(function () {
         Route::get('finalizar', function () {
             return redirect()->route('kanban.index')->with('info', 'Pedido já foi finalizado ou sessão expirou.');
         });
-    });
-
-    // Wizard de Edição de Pedido (5 etapas)
-    Route::prefix('pedidos')->group(function () {
-        Route::match(['get','post'],'editar/cliente', [\App\Http\Controllers\OrderEditWizardController::class, 'client'])->name('orders.edit-wizard.client');
-        Route::match(['get','post'],'editar/costura', [\App\Http\Controllers\OrderEditWizardController::class, 'sewing'])->name('orders.edit-wizard.sewing');
-        Route::match(['get','post'],'editar/personalizacao', [\App\Http\Controllers\OrderEditWizardController::class, 'customization'])->name('orders.edit-wizard.customization');
-        Route::match(['get','post'],'editar/pagamento', [\App\Http\Controllers\OrderEditWizardController::class, 'payment'])->name('orders.edit-wizard.payment');
-        Route::match(['get','post'],'editar/confirmacao', [\App\Http\Controllers\OrderEditWizardController::class, 'confirm'])->name('orders.edit-wizard.confirm');
     });
 
     // Kanban
@@ -107,6 +84,7 @@ Route::middleware('auth')->group(function () {
     // API Routes
     Route::prefix('api')->group(function () {
         Route::get('/clients/search', [\App\Http\Controllers\Api\ClientController::class, 'search']);
+        Route::get('/product-options', [\App\Http\Controllers\Api\ClientController::class, 'getProductOptions']);
         Route::get('/product-options-with-parents', [\App\Http\Controllers\Api\ClientController::class, 'getProductOptionsWithParents']);
         Route::get('/sublimation-sizes', [\App\Http\Controllers\Api\ClientController::class, 'getSublimationSizes']);
         Route::get('/sublimation-locations', [\App\Http\Controllers\Api\ClientController::class, 'getSublimationLocations']);
@@ -119,9 +97,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/personalization-prices/sizes', [\App\Http\Controllers\Api\PersonalizationPriceController::class, 'getSizes']);
         Route::get('/personalization-prices/ranges', [\App\Http\Controllers\Api\PersonalizationPriceController::class, 'getPriceRanges']);
         Route::post('/personalization-prices/multiple', [\App\Http\Controllers\Api\PersonalizationPriceController::class, 'getMultiplePrices']);
-        
-        // Personalizações
-        Route::delete('/personalizations/{id}', [\App\Http\Controllers\OrderWizardController::class, 'deletePersonalization']);
     });
 
     // Caixa
@@ -140,26 +115,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-
-    // Cancelamento de pedidos
-    Route::post('/pedidos/{order}/cancelar', [\App\Http\Controllers\OrderCancellationController::class, 'request'])->name('orders.cancel');
-    
-    // Edição de pedidos
-    Route::post('/pedidos/{order}/editar', [\App\Http\Controllers\OrderEditRequestController::class, 'request'])->name('orders.edit-request');
-    Route::post('/pedidos/edicao/{editRequest}/concluir', [\App\Http\Controllers\OrderEditRequestController::class, 'complete'])->name('orders.edit-complete');
-    
-    // Wizard de Edição de Pedidos
-    Route::get('/pedidos/{order}/editar-wizard', [\App\Http\Controllers\OrderEditWizardController::class, 'start'])->name('orders.edit-wizard.start');
-    Route::get('/pedidos/editar-wizard/cliente', [\App\Http\Controllers\OrderEditWizardController::class, 'client'])->name('orders.edit-wizard.client');
-    Route::post('/pedidos/editar-wizard/cliente', [\App\Http\Controllers\OrderEditWizardController::class, 'client']);
-    Route::get('/pedidos/editar-wizard/costura', [\App\Http\Controllers\OrderEditWizardController::class, 'sewing'])->name('orders.edit-wizard.sewing');
-    Route::post('/pedidos/editar-wizard/costura', [\App\Http\Controllers\OrderEditWizardController::class, 'sewing']);
-    Route::get('/pedidos/editar-wizard/personalizacao', [\App\Http\Controllers\OrderEditWizardController::class, 'customization'])->name('orders.edit-wizard.customization');
-    Route::post('/pedidos/editar-wizard/personalizacao', [\App\Http\Controllers\OrderEditWizardController::class, 'customization']);
-    Route::get('/pedidos/editar-wizard/pagamento', [\App\Http\Controllers\OrderEditWizardController::class, 'payment'])->name('orders.edit-wizard.payment');
-    Route::post('/pedidos/editar-wizard/pagamento', [\App\Http\Controllers\OrderEditWizardController::class, 'payment']);
-    Route::get('/pedidos/editar-wizard/confirmar', [\App\Http\Controllers\OrderEditWizardController::class, 'confirm'])->name('orders.edit-wizard.confirm');
-    Route::post('/pedidos/editar-wizard/finalizar', [\App\Http\Controllers\OrderEditWizardController::class, 'finalize'])->name('orders.edit-wizard.finalize');
 });
 
 // Admin (apenas para administradores)
@@ -183,23 +138,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::put('personalization-prices/{type}', [\App\Http\Controllers\Admin\PersonalizationPriceController::class, 'update'])->name('personalization-prices.update');
     Route::get('personalization-prices/add-row', [\App\Http\Controllers\Admin\PersonalizationPriceController::class, 'addPriceRow'])->name('personalization-prices.add-row');
     Route::get('personalization-prices/sizes', [\App\Http\Controllers\Admin\PersonalizationPriceController::class, 'getSizesForType'])->name('personalization-prices.sizes');
-    
-    // Gerenciamento de cancelamentos
-    Route::get('cancellations', [\App\Http\Controllers\OrderCancellationController::class, 'index'])->name('cancellations.index');
-    Route::post('cancellations/{cancellation}/approve', [\App\Http\Controllers\OrderCancellationController::class, 'approve'])->name('cancellations.approve');
-    Route::post('cancellations/{cancellation}/reject', [\App\Http\Controllers\OrderCancellationController::class, 'reject'])->name('cancellations.reject');
-    
-    // Gerenciamento de edições
-    Route::get('edit-requests', [\App\Http\Controllers\OrderEditRequestController::class, 'index'])->name('edit-requests.index');
-    Route::get('edit-requests/{editRequest}/changes', [\App\Http\Controllers\OrderEditRequestController::class, 'showChanges'])->name('edit-requests.changes');
-    Route::post('edit-requests/{editRequest}/approve', [\App\Http\Controllers\OrderEditRequestController::class, 'approve'])->name('edit-requests.approve');
-    Route::post('edit-requests/{editRequest}/reject', [\App\Http\Controllers\OrderEditRequestController::class, 'reject'])->name('edit-requests.reject');
 });
 
-// API Routes para o wizard de edição (sem autenticação para funcionar no JavaScript)
-Route::get('/api/order-items/{id}', [\App\Http\Controllers\OrderEditWizardController::class, 'getItemData']);
-Route::get('/api/product-options', [\App\Http\Controllers\Api\ClientController::class, 'getProductOptions']);
-Route::get('/api/sublimation-price/{sizeId}/{quantity}', [\App\Http\Controllers\Api\ClientController::class, 'getSublimationPrice']);
-Route::get('/api/personalization-price', [\App\Http\Controllers\Api\PersonalizationPriceController::class, 'getPrice']);
 
 require __DIR__.'/auth.php';

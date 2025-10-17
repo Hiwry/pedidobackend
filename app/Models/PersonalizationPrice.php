@@ -29,7 +29,6 @@ class PersonalizationPrice extends Model
     {
         return static::where('personalization_type', $type)
             ->where('size_name', $sizeName)
-            ->where('active', true)
             ->where('quantity_from', '<=', $quantity)
             ->where(function($query) use ($quantity) {
                 $query->whereNull('quantity_to')
@@ -45,7 +44,6 @@ class PersonalizationPrice extends Model
     public static function getSizesForType($type)
     {
         return static::where('personalization_type', $type)
-            ->where('active', true)
             ->select('size_name', 'size_dimensions')
             ->distinct()
             ->orderBy('order')
@@ -59,7 +57,6 @@ class PersonalizationPrice extends Model
     {
         return static::where('personalization_type', $type)
             ->where('size_name', $sizeName)
-            ->where('active', true)
             ->orderBy('quantity_from')
             ->get();
     }

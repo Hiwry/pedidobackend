@@ -74,22 +74,6 @@
                     <input type="hidden" name="size_surcharges" id="size-surcharges-data">
                     <input type="hidden" name="order_data" value="{{ json_encode($order->items->first()->sizes ?? []) }}">
 
-                    <!-- Imagem de Capa do Pedido -->
-                    <div class="bg-white rounded-lg shadow-md p-6">
-                        <h3 class="text-lg font-semibold mb-4">📸 Imagem de Capa do Pedido</h3>
-                        <div>
-                            <label for="order_cover_image" class="block text-sm font-medium text-gray-700 mb-2">
-                                Imagem de Capa (opcional)
-                                <span class="text-xs text-gray-500 font-normal ml-2">Será usada em impressões e PDFs</span>
-                            </label>
-                            <input type="file" id="order_cover_image" name="order_cover_image" accept="image/*"
-                                   onchange="previewOrderCoverImage(this)"
-                                   class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                            <div id="order-cover-preview" class="mt-3 hidden">
-                                <img id="order-cover-preview-img" src="" alt="Preview" class="max-w-xs rounded-lg border border-gray-300">
-                            </div>
-                        </div>
-                    </div>
 
                     <!-- Data de Entrada -->
                     <div class="bg-white rounded-lg shadow-md p-6">
@@ -289,21 +273,6 @@
             return subtotal + totalSurcharges + deliveryFee;
         }
 
-        function previewOrderCoverImage(input) {
-            const preview = document.getElementById('order-cover-preview');
-            const previewImg = document.getElementById('order-cover-preview-img');
-            
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    previewImg.src = e.target.result;
-                    preview.classList.remove('hidden');
-                };
-                reader.readAsDataURL(input.files[0]);
-            } else {
-                preview.classList.add('hidden');
-            }
-        }
     </script>
 </body>
 </html>

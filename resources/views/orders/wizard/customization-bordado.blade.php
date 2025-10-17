@@ -47,24 +47,14 @@
                            placeholder="Ex: Logo Empresa XYZ">
                 </div>
 
-                <!-- Imagem de Capa -->
-                <div class="mb-6">
-                    <label for="cover_image" class="block text-sm font-medium text-gray-700 mb-2">Imagem de Capa do Pedido</label>
-                    <input type="file" id="cover_image" name="cover_image" accept="image/*"
-                           class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                           onchange="previewCoverImage(event)">
-                    <div id="cover-preview" class="mt-3 hidden">
-                        <img id="cover-preview-img" src="" alt="Preview" class="max-w-xs rounded-lg border">
-                    </div>
-                </div>
 
                 <!-- Arquivos da Arte -->
                 <div class="mb-6">
-                    <label for="art_files" class="block text-sm font-medium text-gray-700 mb-2">Arquivos da Arte (múltiplos)</label>
+                    <label for="art_files" class="block text-sm font-medium text-gray-700 mb-2">Arquivos da Arte (múltiplos) *</label>
                     <input type="file" id="art_files" name="art_files[]" multiple
-                           class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                           required class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                            onchange="displayFileList()">
-                    <p class="text-xs text-gray-500 mt-1">Você pode selecionar múltiplos arquivos (AI, PDF, PNG, JPG, DST, etc)</p>
+                    <p class="text-xs text-gray-500 mt-1">Você pode selecionar múltiplos arquivos (AI, PDF, PNG, JPG, DST, etc) - Obrigatório pelo menos 1 arquivo</p>
                     <div id="file-list" class="mt-3 space-y-2"></div>
                 </div>
 
@@ -148,7 +138,7 @@
         let locations = [];
         let applications = [];
         let totalShirts = {{ session('total_shirts', 0) }};
-        let currentSize = null;
+        let currentSize = '';
 
         // Apenas A4, ESCUDO e NOME para Bordado
         const allowedSizes = ['A4', 'ESCUDO', 'NOME'];
@@ -176,7 +166,7 @@
                 <button type="button" onclick="openModal(${size.id})" 
                         class="p-4 border-2 border-gray-300 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition text-center">
                     <div class="font-bold text-lg">${size.name}</div>
-                    <div class="text-sm text-gray-600">${size.dimensions}</div>
+                    <div class="text-sm text-gray-600">${size.dimensions || ''}</div>
                     <div class="text-xs text-indigo-600 mt-2" id="price-${size.id}">Carregando...</div>
                 </button>
             `).join('');
@@ -200,7 +190,8 @@
 
         function openModal(sizeId) {
             currentSize = sizes.find(s => s.id === sizeId);
-            document.getElementById('modal-size-name').textContent = `${currentSize.name} (${currentSize.dimensions})`;
+            const dimensions = currentSize.dimensions || '';
+            document.getElementById('modal-size-name').textContent = dimensions ? `${currentSize.name} (${dimensions})` : currentSize.name;
             document.getElementById('modal-quantity').value = 1;
             
             fetch(`/api/sublimation-price/${sizeId}/${totalShirts}`)
