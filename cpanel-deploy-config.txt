@@ -1,0 +1,99 @@
+=== CONFIGURAÇÃO DE DEPLOY AUTOMÁTICO - CPANEL ===
+
+SISTEMA: GitHub -> cPanel -> vestalize.com
+DATA: 2025-01-17
+VERSÃO: 1.0.0
+
+=== INSTRUÇÕES DE CONFIGURAÇÃO ===
+
+1. CONFIGURAR WEBHOOK NO GITHUB
+   - Acesse: https://github.com/Hiwry/pedidobackend/settings/hooks
+   - Clique em "Add webhook"
+   - URL: https://vestalize.com/github-deploy.php
+   - Content type: application/json
+   - Secret: [SUA_CHAVE_SECRETA]
+   - Events: Just the push event
+   - Active: ✓
+
+2. CONFIGURAR CHAVE SECRETA
+   - No arquivo public/github-deploy.php
+   - Linha 45: $secret = 'sua_chave_secreta_github';
+   - Substitua pela chave que você configurou no GitHub
+
+3. VERIFICAR PERMISSÕES NO CPANEL
+   - storage/ (755)
+   - bootstrap/cache/ (755)
+   - public/ (755)
+   - backups/ (755)
+
+4. VERIFICAR COMANDOS DISPONÍVEIS
+   - git (deve estar instalado)
+   - composer (deve estar instalado)
+   - php (versão 8.2+)
+
+=== ARQUIVOS CRIADOS ===
+
+✅ public/github-deploy.php - Script principal de deploy
+✅ storage/logs/github-deploy.log - Logs detalhados
+✅ backups/ - Backup automático antes de cada deploy
+
+=== FUNCIONALIDADES ===
+
+🔄 Deploy automático a cada push
+📦 Backup automático antes do deploy
+📝 Logs detalhados de todas as operações
+🔒 Validação de segurança (signature)
+⚡ Otimização automática para produção
+🛡️ Verificação de saúde da aplicação
+
+=== COMANDOS EXECUTADOS ===
+
+1. git pull origin main
+2. composer install --no-dev --optimize-autoloader
+3. php artisan migrate --force
+4. php artisan config:clear
+5. php artisan cache:clear
+6. php artisan view:clear
+7. php artisan route:clear
+8. php artisan config:cache
+9. php artisan route:cache
+10. php artisan view:cache
+11. chmod -R 755 storage/
+12. chmod -R 755 bootstrap/cache/
+
+=== TESTE DE FUNCIONAMENTO ===
+
+1. Faça um push para o GitHub
+2. Verifique o webhook no GitHub (deve mostrar ✅)
+3. Acesse: https://vestalize.com/github-deploy.php (deve retornar JSON)
+4. Verifique os logs: storage/logs/github-deploy.log
+5. Confirme que o site está atualizado
+
+=== TROUBLESHOOTING ===
+
+PROBLEMA: Webhook retorna 404
+SOLUÇÃO: Verificar se o arquivo está em public/github-deploy.php
+
+PROBLEMA: Erro de permissão
+SOLUÇÃO: Ajustar permissões via cPanel File Manager
+
+PROBLEMA: Git não encontrado
+SOLUÇÃO: Instalar Git via cPanel ou usar SSH
+
+PROBLEMA: Composer não encontrado
+SOLUÇÃO: Instalar Composer via cPanel
+
+=== LOGS IMPORTANTES ===
+
+- storage/logs/github-deploy.log (Logs do deploy)
+- storage/logs/laravel.log (Logs da aplicação)
+- backups/ (Backups automáticos)
+
+=== CONTATOS ===
+
+Desenvolvedor: Sistema de Pedidos
+Repositório: https://github.com/Hiwry/pedidobackend
+Site: https://vestalize.com
+Data: 2025-01-17
+
+=== FIM DA CONFIGURAÇÃO ===
