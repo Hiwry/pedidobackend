@@ -1,0 +1,98 @@
+=== SCRIPT DE DEPLOY - SISTEMA DE PEDIDOS ===
+
+Data: 2025-01-17
+Versão: 1.0.0
+
+=== INSTRUÇÕES DE DEPLOY ===
+
+1. BACKUP DO BANCO DE DADOS
+   - Fazer backup completo do banco antes do deploy
+   - Comando: mysqldump -u usuario -p nome_banco > backup_$(date +%Y%m%d_%H%M%S).sql
+
+2. ATUALIZAR CÓDIGO
+   - git pull origin main
+   - Verificar se todas as alterações foram aplicadas
+
+3. INSTALAR/ATUALIZAR DEPENDÊNCIAS
+   - composer install --no-dev --optimize-autoloader
+   - npm install --production
+
+4. EXECUTAR MIGRATIONS
+   - php artisan migrate --force
+   - Verificar se a migration 2025_10_17_113552_add_seller_notes_and_colors_to_order_sublimations_table.php foi executada
+
+5. LIMPAR CACHES
+   - php artisan config:clear
+   - php artisan cache:clear
+   - php artisan view:clear
+   - php artisan route:clear
+
+6. OTIMIZAR APLICAÇÃO
+   - php artisan config:cache
+   - php artisan route:cache
+   - php artisan view:cache
+
+7. VERIFICAR PERMISSÕES
+   - storage/ (755)
+   - bootstrap/cache/ (755)
+   - public/ (755)
+
+8. TESTES PÓS-DEPLOY
+   - Verificar login de usuários
+   - Testar criação de pedidos
+   - Verificar PDFs de personalização e costura
+   - Testar configuração de preços de personalização
+   - Verificar funcionalidade de cores separadas para SERIGRAFIA
+
+=== NOVAS FUNCIONALIDADES IMPLEMENTADAS ===
+
+✅ Sistema de observações do vendedor
+✅ Detalhes específicos de cores
+✅ Cores separadas para SERIGRAFIA
+✅ Destaque para pedidos de evento
+✅ Interface melhorada de configuração de preços
+✅ Correções no carregamento e salvamento de dados
+
+=== ARQUIVOS PRINCIPAIS MODIFICADOS ===
+
+- app/Http/Controllers/Admin/PersonalizationPriceController.php
+- app/Http/Controllers/OrderWizardController.php
+- app/Models/Order.php
+- app/Models/PersonalizationPrice.php
+- resources/views/admin/personalization-prices/edit-serigraphy.blade.php
+- resources/views/kanban/pdf/personalizacao.blade.php
+- resources/views/kanban/pdf/costura.blade.php
+- database/migrations/2025_10_17_113552_add_seller_notes_and_colors_to_order_sublimations_table.php
+
+=== COMANDOS DE VERIFICAÇÃO ===
+
+# Verificar status do git
+git status
+
+# Verificar logs de erro
+tail -f storage/logs/laravel.log
+
+# Verificar configuração
+php artisan config:show
+
+# Verificar rotas
+php artisan route:list
+
+# Verificar migrations
+php artisan migrate:status
+
+=== ROLLBACK (EM CASO DE PROBLEMAS) ===
+
+1. Restaurar backup do banco
+2. git reset --hard HEAD~1
+3. composer install
+4. php artisan config:clear
+5. php artisan cache:clear
+
+=== CONTATOS DE SUPORTE ===
+
+Desenvolvedor: Sistema de Pedidos
+Data: 2025-01-17
+Versão: 1.0.0
+
+=== FIM DO SCRIPT DE DEPLOY ===
