@@ -6,6 +6,12 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Meu Pedido #{{ str_pad($order->id, 6, '0', STR_PAD_LEFT) }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class'
+        }
+    </script>
+    <script src="{{ asset('js/dark-mode.js') }}"></script>
     <style>
         @media (max-width: 640px) {
             .mobile-padding { padding: 1rem; }
@@ -23,6 +29,11 @@
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
         
+        .dark .cover-image {
+            border-color: rgb(71 85 105);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+        
         @media (max-width: 640px) {
             .cover-image {
                 max-height: 150px;
@@ -34,20 +45,74 @@
                 max-height: 120px;
             }
         }
+        
+        /* Dark mode text colors */
+        .dark .client-order p,
+        .dark .client-order span,
+        .dark .client-order div {
+            color: rgb(203 213 225);
+        }
+        
+        .dark .client-order .text-gray-900 {
+            color: rgb(248 250 252) !important;
+        }
+        
+        .dark .client-order .text-gray-800 {
+            color: rgb(241 245 249) !important;
+        }
+        
+        .dark .client-order .text-gray-700 {
+            color: rgb(226 232 240) !important;
+        }
+        
+        .dark .client-order .text-gray-600 {
+            color: rgb(203 213 225) !important;
+        }
+        
+        .dark .client-order .text-gray-500 {
+            color: rgb(148 163 184) !important;
+        }
+        
+        /* Backgrounds */
+        .dark .bg-white {
+            background-color: rgb(15 23 42) !important;
+        }
+        
+        .dark .bg-gray-50 {
+            background-color: rgb(30 41 59) !important;
+        }
+        
+        .dark .bg-gray-100 {
+            background-color: rgb(30 41 59) !important;
+        }
+        
+        /* Borders */
+        .dark .border-gray-200 {
+            border-color: rgb(51 65 85) !important;
+        }
+        
+        .dark .border-gray-300 {
+            border-color: rgb(71 85 105) !important;
+        }
+        
+        /* SVG icons */
+        .dark .text-gray-400 {
+            color: rgb(148 163 184) !important;
+        }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
+<body class="client-order bg-gray-50 dark:bg-slate-950 min-h-screen transition-colors duration-200">
     <!-- Header -->
-    <div class="bg-indigo-600 text-white py-4 px-4 mobile-padding">
+    <div class="bg-gray-800 dark:bg-gradient-to-r dark:from-indigo-700 dark:via-indigo-800 dark:to-purple-700 text-white py-6 px-4 mobile-padding shadow-sm dark:shadow-lg dark:shadow-indigo-900/30">
         <div class="max-w-md mx-auto">
-            <h1 class="text-xl font-bold text-center">Meu Pedido</h1>
-            <p class="text-center text-indigo-200 mobile-text-sm">#{{ str_pad($order->id, 6, '0', STR_PAD_LEFT) }}</p>
+            <h1 class="text-xl font-semibold text-center">Meu Pedido</h1>
+            <p class="text-center text-gray-300 dark:text-indigo-200 mobile-text-sm">#{{ str_pad($order->id, 6, '0', STR_PAD_LEFT) }}</p>
         </div>
     </div>
 
     <div class="max-w-md mx-auto mobile-padding">
         @if(session('success'))
-        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4 mobile-text-sm">
+        <div class="bg-gray-100 dark:bg-green-900/20 border border-gray-300 dark:border-green-800 text-gray-700 dark:text-green-300 px-4 py-3 rounded mb-4 mobile-text-sm">
             <div class="flex items-center">
                 <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
@@ -58,24 +123,24 @@
         @endif
 
         <!-- Status do Pedido -->
-        <div class="bg-white rounded-lg shadow p-4 mb-4">
+        <div class="bg-white dark:bg-slate-900 rounded border border-gray-200 dark:border-slate-800 dark:shadow-2xl dark:shadow-black/20 p-4 mb-4">
             <div class="flex items-center justify-between mb-3">
-                <h2 class="text-lg font-semibold">Status do Pedido</h2>
-                <span class="px-3 py-1 text-sm font-medium rounded-full text-white" 
+                <h2 class="text-base font-semibold text-gray-900 dark:text-white">Status do Pedido</h2>
+                <span class="px-3 py-1 text-xs font-medium rounded-full text-white" 
                       style="background-color: {{ $order->status->color }}">
                     {{ $order->status->name }}
                 </span>
             </div>
             
             @if($order->client_confirmed)
-            <div class="bg-green-50 border border-green-200 rounded p-3 mb-3">
+            <div class="bg-gray-50 dark:bg-green-900/20 border border-gray-200 dark:border-green-800 rounded p-3 mb-3">
                 <div class="flex items-center">
-                    <svg class="w-5 h-5 text-green-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <svg class="w-5 h-5 text-gray-600 dark:text-green-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
                     </svg>
-                    <span class="text-green-800 font-medium mobile-text-sm">Pedido Confirmado</span>
+                    <span class="text-gray-700 dark:text-green-300 font-medium mobile-text-sm">Pedido Confirmado</span>
                 </div>
-                <p class="text-green-600 mobile-text-xs mt-1">
+                <p class="text-gray-500 dark:text-green-400 mobile-text-xs mt-1">
                     Confirmado em {{ $order->client_confirmed_at->format('d/m/Y H:i') }}
                 </p>
             </div>
@@ -83,82 +148,94 @@
 
             <div class="grid grid-cols-2 gap-4 mobile-text-sm">
                 <div>
-                    <p class="text-gray-600 mobile-text-xs">Data do Pedido</p>
-                    <p class="font-medium">{{ $order->created_at->format('d/m/Y') }}</p>
+                    <p class="text-gray-500 dark:text-slate-400 mobile-text-xs">Data do Pedido</p>
+                    <p class="font-semibold text-gray-900 dark:text-white">{{ $order->created_at->format('d/m/Y') }}</p>
                 </div>
                 @if($order->delivery_date)
                 <div>
-                    <p class="text-gray-600 mobile-text-xs">Previsão de Entrega</p>
-                    <p class="font-medium">{{ \Carbon\Carbon::parse($order->delivery_date)->format('d/m/Y') }}</p>
+                    <p class="text-gray-500 dark:text-slate-400 mobile-text-xs">Previsão de Entrega</p>
+                    <p class="font-semibold text-gray-900 dark:text-white">{{ \Carbon\Carbon::parse($order->delivery_date)->format('d/m/Y') }}</p>
                 </div>
                 @endif
             </div>
         </div>
 
         <!-- Dados do Cliente -->
-        <div class="bg-white rounded-lg shadow p-4 mb-4">
-            <h2 class="text-lg font-semibold mb-3">Seus Dados</h2>
+        <div class="bg-white dark:bg-slate-900 rounded border border-gray-200 dark:border-slate-800 dark:shadow-2xl dark:shadow-black/20 p-4 mb-4">
+            <h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">Seus Dados</h2>
             <div class="space-y-2 mobile-text-sm">
                 <div>
-                    <p class="text-gray-600 mobile-text-xs">Nome</p>
-                    <p class="font-medium">{{ $order->client->name }}</p>
+                    <p class="text-gray-500 dark:text-slate-400 mobile-text-xs">Nome</p>
+                    <p class="font-semibold text-gray-900 dark:text-white">{{ $order->client->name }}</p>
                 </div>
                 <div>
-                    <p class="text-gray-600 mobile-text-xs">Telefone</p>
-                    <p class="font-medium">{{ $order->client->phone_primary }}</p>
+                    <p class="text-gray-500 dark:text-slate-400 mobile-text-xs">Telefone</p>
+                    <p class="font-semibold text-gray-900 dark:text-white">{{ $order->client->phone_primary }}</p>
                 </div>
                 @if($order->client->email)
                 <div>
-                    <p class="text-gray-600 mobile-text-xs">Email</p>
-                    <p class="font-medium">{{ $order->client->email }}</p>
+                    <p class="text-gray-500 dark:text-slate-400 mobile-text-xs">Email</p>
+                    <p class="font-semibold text-gray-900 dark:text-white">{{ $order->client->email }}</p>
                 </div>
                 @endif
             </div>
         </div>
 
+        <!-- Informações do Vendedor -->
+        @if($order->user)
+        <div class="bg-white dark:bg-slate-900 rounded border border-gray-200 dark:border-slate-800 dark:shadow-2xl dark:shadow-black/20 p-4 mb-4">
+            <h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">Atendimento</h2>
+            <div class="space-y-2 mobile-text-sm">
+                <div>
+                    <p class="text-gray-500 dark:text-slate-400 mobile-text-xs">Vendedor</p>
+                    <p class="font-semibold text-gray-900 dark:text-white">{{ $order->user->name }}</p>
+                </div>
+                @if($order->user->store)
+                <div>
+                    <p class="text-gray-500 dark:text-slate-400 mobile-text-xs">Loja</p>
+                    <p class="font-semibold text-gray-900 dark:text-white">{{ $order->user->store }}</p>
+                </div>
+                @endif
+            </div>
+        </div>
+        @endif
+
         <!-- Itens do Pedido -->
         @foreach($order->items as $item)
-        <div class="bg-white rounded-lg shadow p-4 mb-4">
-            <h2 class="text-lg font-semibold mb-3">Item {{ $loop->iteration }} - {{ $item->print_type }}</h2>
+        <div class="bg-white dark:bg-slate-900 rounded border border-gray-200 dark:border-slate-800 dark:shadow-2xl dark:shadow-black/20 p-4 mb-4">
+            <h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">Item {{ $loop->iteration }} - {{ $item->print_type }}</h2>
             
             @if($item->art_name)
             <div class="mb-3">
-                <p class="text-gray-600 mobile-text-xs">Nome da Arte</p>
+                <p class="text-gray-500 dark:text-slate-400 mobile-text-xs">Nome da Arte</p>
                 <p class="font-medium mobile-text-sm">{{ $item->art_name }}</p>
             </div>
             @endif
 
             <!-- Imagem de Capa -->
-            @if($item->cover_image)
+            @if($item->cover_image || $item->cover_image_url)
             <div class="mb-3">
-                <p class="text-gray-600 mobile-text-xs mb-2">Imagem de Referência</p>
+                <p class="text-gray-600 dark:text-slate-400 mobile-text-xs mb-2">Imagem de Referência</p>
                 <div class="text-center">
                     @php
-                        $imagePath = 'storage/' . $item->cover_image;
-                        $fullPath = public_path($imagePath);
-                        $imageExists = file_exists($fullPath);
+                        $imageUrl = $item->cover_image_url;
                     @endphp
-                    
-                    @if($imageExists)
-                        <img src="{{ asset($imagePath) }}" 
-                             alt="Imagem de Referência" 
-                             class="cover-image mx-auto"
-                             onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                    @else
-                        <div class="text-gray-500 text-sm py-4">
-                            <svg class="w-8 h-8 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                            </svg>
-                            <p>Arquivo de imagem não encontrado</p>
-                            <p class="text-xs text-gray-400 mt-1">{{ $item->cover_image }}</p>
-                        </div>
+                    @if($imageUrl)
+                    <img src="{{ $imageUrl }}" 
+                         alt="Imagem de Referência" 
+                         class="cover-image mx-auto cursor-pointer hover:opacity-80 transition-opacity"
+                         onclick="openImageModal('{{ $imageUrl }}')"
+                         onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='block';">
                     @endif
                     
-                    <div class="text-gray-500 text-sm py-4" style="display: none;">
-                        <svg class="w-8 h-8 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="text-gray-500 dark:text-slate-400 text-sm py-4 {{ $imageUrl ? 'hidden' : '' }}">
+                        <svg class="w-8 h-8 mx-auto mb-2 text-gray-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                         </svg>
-                        <p>Erro ao carregar imagem</p>
+                        <p class="text-gray-600 dark:text-slate-300">Erro ao carregar imagem</p>
+                        @if($item->cover_image)
+                        <p class="text-xs text-gray-400 dark:text-slate-500 mt-1">{{ basename($item->cover_image) }}</p>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -169,12 +246,12 @@
                 <p class="text-gray-600 mobile-text-xs mb-2">Especificações</p>
                 <div class="grid grid-cols-2 gap-2 mobile-text-sm">
                     <div>
-                        <span class="text-gray-600">Tecido:</span>
-                        <span class="font-medium">{{ $item->fabric }}</span>
+                        <span class="text-gray-500 dark:text-slate-400">Tecido:</span>
+                        <span class="font-semibold text-gray-900 dark:text-white">{{ $item->fabric }}</span>
                     </div>
                     <div>
-                        <span class="text-gray-600">Cor:</span>
-                        <span class="font-medium">{{ $item->color }}</span>
+                        <span class="text-gray-500 dark:text-slate-400">Cor:</span>
+                        <span class="font-semibold text-gray-900 dark:text-white">{{ $item->color }}</span>
                     </div>
                 </div>
             </div>
@@ -189,7 +266,7 @@
                     $locationName = $sub->location ? $sub->location->name : $sub->location_name;
                     $appType = $sub->application_type ? strtoupper($sub->application_type) : 'APLICAÇÃO';
                 @endphp
-                <div class="bg-gray-50 p-3 rounded mb-2 mobile-text-sm">
+                <div class="bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 p-3 rounded mb-2 mobile-text-sm">
                     <div class="font-medium">
                         {{ $index + 1 }}. 
                         @if($sizeName)
@@ -204,29 +281,52 @@
                         @if($sub->color_count > 0) | {{ $sub->color_count }} cores @endif
                         @if($sub->has_neon) | Neon @endif
                     </div>
+                    
+                    <!-- Imagem da Aplicação -->
+                    @if($sub->application_image)
+                    <div class="mt-2">
+                        @php
+                            $appImagePath = 'storage/' . $sub->application_image;
+                            $appImageExists = file_exists(public_path($appImagePath));
+                        @endphp
+                        
+                        @if($appImageExists)
+                            <img src="{{ asset($appImagePath) }}" 
+                                 alt="Imagem da Aplicação {{ $index + 1 }}" 
+                                 class="w-full max-w-xs mx-auto rounded border cursor-pointer hover:opacity-80 transition-opacity"
+                                 onclick="openImageModal('{{ asset($appImagePath) }}')"
+                                 onerror="this.style.display='none';">
+                        @endif
+                    </div>
+                    @endif
                 </div>
                 @endforeach
             </div>
             @endif
 
             <!-- Tamanhos -->
+            @php
+                // Garantir que sizes seja um array
+                $itemSizes = is_array($item->sizes) ? $item->sizes : (is_string($item->sizes) && !empty($item->sizes) ? json_decode($item->sizes, true) : []);
+                $itemSizes = $itemSizes ?? [];
+            @endphp
             <div class="mb-3">
-                <p class="text-gray-600 mobile-text-xs mb-2">Tamanhos</p>
+                <p class="text-gray-600 dark:text-slate-400 mobile-text-xs mb-2">Tamanhos</p>
                 <div class="grid grid-cols-5 gap-1 mobile-text-xs">
                     @foreach(['PP', 'P', 'M', 'G', 'GG'] as $size)
-                    <div class="text-center p-1 bg-gray-100 rounded">
+                    <div class="text-center p-1.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded text-sm text-gray-900 dark:text-white">
                         <div class="font-medium">{{ $size }}</div>
-                        <div>{{ $item->sizes[$size] ?? 0 }}</div>
+                        <div>{{ $itemSizes[$size] ?? 0 }}</div>
                     </div>
                     @endforeach
                 </div>
-                @if(isset($item->sizes['EXG']) || isset($item->sizes['G1']) || isset($item->sizes['G2']) || isset($item->sizes['G3']) || isset($item->sizes['ESPECIAL']))
+                @if(isset($itemSizes['EXG']) || isset($itemSizes['G1']) || isset($itemSizes['G2']) || isset($itemSizes['G3']) || isset($itemSizes['ESPECIAL']))
                 <div class="grid grid-cols-5 gap-1 mobile-text-xs mt-1">
                     @foreach(['EXG', 'G1', 'G2', 'G3', 'ESPECIAL'] as $size)
-                    @if(isset($item->sizes[$size]) && $item->sizes[$size] > 0)
-                    <div class="text-center p-1 bg-gray-100 rounded">
+                    @if(isset($itemSizes[$size]) && $itemSizes[$size] > 0)
+                    <div class="text-center p-1.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded text-sm text-gray-900 dark:text-white">
                         <div class="font-medium">{{ $size }}</div>
-                        <div>{{ $item->sizes[$size] }}</div>
+                        <div>{{ $itemSizes[$size] }}</div>
                     </div>
                     @endif
                     @endforeach
@@ -237,22 +337,22 @@
         @endforeach
 
         <!-- Resumo Financeiro -->
-        <div class="bg-white rounded-lg shadow p-4 mb-4">
-            <h2 class="text-lg font-semibold mb-3">Resumo Financeiro</h2>
+        <div class="bg-white dark:bg-slate-900 rounded border border-gray-200 dark:border-slate-800 dark:shadow-2xl dark:shadow-black/20 p-4 mb-4">
+            <h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">Resumo Financeiro</h2>
             <div class="space-y-2 mobile-text-sm">
                 <div class="flex justify-between">
-                    <span class="text-gray-600">Total do Pedido:</span>
-                    <span class="font-bold text-lg">R$ {{ number_format($order->total, 2, ',', '.') }}</span>
+                    <span class="text-gray-500 dark:text-slate-400">Total do Pedido:</span>
+                    <span class="font-semibold text-base text-gray-900 dark:text-white">R$ {{ number_format($order->total, 2, ',', '.') }}</span>
                 </div>
                 @if($payment)
                 <div class="flex justify-between">
-                    <span class="text-gray-600">Total Pago:</span>
-                    <span class="font-medium text-green-600">R$ {{ number_format($payment->entry_amount, 2, ',', '.') }}</span>
+                    <span class="text-gray-500 dark:text-slate-400">Total Pago:</span>
+                    <span class="font-medium text-gray-900 dark:text-green-400">R$ {{ number_format($payment->entry_amount, 2, ',', '.') }}</span>
                 </div>
                 <div class="flex justify-between border-t pt-2">
-                    <span class="text-gray-600">Restante:</span>
-                    <span class="font-medium {{ $payment->remaining_amount > 0 ? 'text-orange-600' : 'text-green-600' }}">
-                        R$ {{ number_format($payment->remaining_amount, 2, ',', '.') }}
+                    <span class="text-gray-500 dark:text-slate-400">{{ $payment->remaining_amount < 0 ? 'Crédito do Cliente:' : 'Restante:' }}</span>
+                    <span class="font-medium {{ $payment->remaining_amount > 0 ? 'text-gray-900 dark:text-orange-400' : 'text-gray-900 dark:text-green-400' }}">
+                        R$ {{ number_format(abs($payment->remaining_amount), 2, ',', '.') }}
                     </span>
                 </div>
                 @endif
@@ -261,9 +361,9 @@
 
         <!-- Confirmação do Pedido -->
         @if(!$order->client_confirmed)
-        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-            <h2 class="text-lg font-semibold mb-3 text-yellow-800">Confirme Seu Pedido</h2>
-            <p class="text-yellow-700 mobile-text-sm mb-4">
+        <div class="bg-gray-50 dark:bg-yellow-900/20 border border-gray-200 dark:border-yellow-800 rounded p-4 mb-4">
+            <h2 class="text-base font-semibold mb-3 text-gray-900 dark:text-yellow-300">Confirme Seu Pedido</h2>
+            <p class="text-gray-600 dark:text-yellow-400 mobile-text-sm mb-4">
                 Por favor, confirme se os dados do seu pedido estão corretos. Esta confirmação é importante para prosseguirmos com a produção.
             </p>
             
@@ -276,7 +376,7 @@
                         <input type="text" 
                                name="client_name" 
                                value="{{ $order->client->name }}"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 mobile-text-sm"
+                               class="w-full px-3 py-2 border border-gray-300 dark:border-slate-700 rounded bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:border-gray-400 dark:focus:border-indigo-400 mobile-text-sm"
                                required>
                     </div>
                     
@@ -285,7 +385,7 @@
                         <input type="tel" 
                                name="client_phone" 
                                value="{{ $order->client->phone_primary }}"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 mobile-text-sm"
+                               class="w-full px-3 py-2 border border-gray-300 dark:border-slate-700 rounded bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:border-gray-400 dark:focus:border-indigo-400 mobile-text-sm"
                                required>
                     </div>
                     
@@ -293,31 +393,56 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1">Observações (opcional)</label>
                         <textarea name="confirmation_notes" 
                                   rows="3" 
-                                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 mobile-text-sm"
+                                  class="w-full px-3 py-2 border border-gray-300 dark:border-slate-700 rounded bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:border-gray-400 dark:focus:border-indigo-400 mobile-text-sm"
                                   placeholder="Alguma observação sobre o pedido..."></textarea>
+                    </div>
+                    
+                    <!-- Termos e Condições -->
+                    <div class="bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded p-4">
+                        <div class="flex items-start space-x-3">
+                            <input type="checkbox" 
+                                   id="accept_terms" 
+                                   name="accept_terms" 
+                                   value="1"
+                                   class="mt-1 h-4 w-4 text-gray-700 dark:text-indigo-500 focus:ring-gray-500 dark:focus:ring-indigo-400 border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 rounded"
+                                   required>
+                            <div class="flex-1">
+                                <label for="accept_terms" class="text-sm font-semibold text-gray-700 dark:text-slate-300 cursor-pointer">
+                                    Aceito os 
+                                    <button type="button" 
+                                            onclick="openTermsModal()" 
+                                            class="text-indigo-600 hover:text-indigo-800 underline">
+                                        Termos e Condições
+                                    </button>
+                                </label>
+                                <p class="text-xs text-gray-500 mt-1">
+                                    Ao confirmar o pedido, você concorda com nossos termos e condições de serviço.
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
                 <button type="submit" 
-                        class="w-full mt-4 bg-indigo-600 text-white py-3 px-4 rounded-md hover:bg-indigo-700 font-medium mobile-text-sm">
-                    ✓ Confirmar Pedido
+                        class="w-full mt-4 bg-gray-800 hover:bg-gray-900 dark:bg-gradient-to-r dark:from-indigo-500 dark:to-indigo-600 dark:hover:from-indigo-600 dark:hover:to-indigo-700 text-white py-3 px-4 rounded dark:rounded-lg font-medium mobile-text-sm transition-colors dark:shadow-lg dark:shadow-indigo-600/30">
+                    Confirmar Pedido
                 </button>
             </form>
         </div>
         @else
-        <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+        <div class="bg-gray-50 dark:bg-green-900/20 border border-gray-200 dark:border-green-800 rounded p-4 mb-4">
             <div class="flex items-center mb-2">
                 <svg class="w-6 h-6 text-green-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
                 </svg>
-                <h2 class="text-lg font-semibold text-green-800">Pedido Confirmado</h2>
+                <h2 class="text-base font-semibold text-gray-900 dark:text-green-300">Pedido Confirmado</h2>
             </div>
-            <p class="text-green-700 mobile-text-sm">
+            <p class="text-gray-600 dark:text-green-400 mobile-text-sm">
                 Obrigado pela confirmação! Seu pedido está em produção. Você pode acompanhar o status aqui mesmo.
             </p>
             @if($order->client_confirmation_notes)
             <div class="mt-3 p-3 bg-white rounded border">
-                <p class="text-gray-600 mobile-text-xs">Suas observações:</p>
+                <p class="text-gray-500 dark:text-slate-400 mobile-text-xs">Suas observações:</p>
                 <p class="mobile-text-sm">{{ $order->client_confirmation_notes }}</p>
             </div>
             @endif
@@ -326,20 +451,121 @@
 
         <!-- Observações do Pedido -->
         @if($order->notes)
-        <div class="bg-white rounded-lg shadow p-4 mb-4">
-            <h2 class="text-lg font-semibold mb-3">Observações</h2>
+        <div class="bg-white dark:bg-slate-900 rounded border border-gray-200 dark:border-slate-800 dark:shadow-2xl dark:shadow-black/20 p-4 mb-4">
+            <h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">Observações</h2>
             <p class="mobile-text-sm text-gray-700">{{ $order->notes }}</p>
         </div>
         @endif
 
         <!-- Footer -->
-        <div class="text-center py-4 mobile-text-xs text-gray-500">
+        <div class="text-center py-6 mobile-text-xs text-gray-500 dark:text-slate-400">
             <p>Para dúvidas, entre em contato conosco</p>
             <p>Tel: (11) 99999-9999 | Email: contato@empresa.com</p>
+            <p class="mt-2">
+                <a href="#" onclick="openTermsModal()" class="text-indigo-600 hover:text-indigo-800 underline">
+                    Termos e Condições
+                </a>
+            </p>
+        </div>
+    </div>
+
+    <!-- Modal de Zoom da Imagem -->
+    <div id="imageModal" class="fixed inset-0 bg-black/70 dark:bg-black/90 dark:backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="relative max-w-4xl max-h-full">
+            <button onclick="closeImageModal()" class="absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white text-2xl font-bold rounded-full w-10 h-10 flex items-center justify-center transition-colors z-10">
+                ×
+            </button>
+            <img id="modalImage" src="" alt="Imagem em zoom" class="max-w-full max-h-full object-contain rounded">
+        </div>
+    </div>
+
+    <!-- Modal de Termos e Condições -->
+    <div id="termsModal" class="fixed inset-0 bg-black bg-opacity-75 z-50 hidden flex items-center justify-center p-4">
+        <div class="relative max-w-4xl max-h-full bg-white dark:bg-slate-900 dark:text-slate-200 rounded-lg">
+            <div class="flex justify-between items-center p-4 border-b dark:border-slate-700">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Termos e Condições</h3>
+                <button onclick="closeTermsModal()" class="text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 text-2xl font-bold">
+                    ×
+                </button>
+            </div>
+            <div class="p-4 max-h-96 overflow-y-auto">
+                <div id="termsContent" class="text-sm text-gray-700 dark:text-slate-200 leading-relaxed">
+                    Carregando...
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
+        // Funções para o modal de zoom
+        function openImageModal(imageSrc) {
+            const modal = document.getElementById('imageModal');
+            const modalImage = document.getElementById('modalImage');
+            
+            modalImage.src = imageSrc;
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden'; // Previne scroll da página
+        }
+
+        function closeImageModal() {
+            const modal = document.getElementById('imageModal');
+            modal.classList.add('hidden');
+            document.body.style.overflow = 'auto'; // Restaura scroll da página
+        }
+
+        // Fechar modal ao clicar fora da imagem
+        document.getElementById('imageModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeImageModal();
+            }
+        });
+
+        // Fechar modal com tecla ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeImageModal();
+                closeTermsModal();
+            }
+        });
+
+        // Funções para o modal de termos e condições
+        function openTermsModal() {
+            const modal = document.getElementById('termsModal');
+            const content = document.getElementById('termsContent');
+            
+            // Mostrar modal
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            
+            // Carregar conteúdo via AJAX
+            fetch('/api/terms-conditions')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.content) {
+                        content.innerHTML = data.content.replace(/\n/g, '<br>');
+                    } else {
+                        content.innerHTML = '<p class="text-gray-500">Termos e condições não disponíveis no momento.</p>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar termos e condições:', error);
+                    content.innerHTML = '<p class="text-red-500">Erro ao carregar termos e condições.</p>';
+                });
+        }
+
+        function closeTermsModal() {
+            const modal = document.getElementById('termsModal');
+            modal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Fechar modal de termos ao clicar fora
+        document.getElementById('termsModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeTermsModal();
+            }
+        });
+
         // Auto-refresh da página a cada 30 segundos para atualizar o status
         setTimeout(function() {
             location.reload();
@@ -362,6 +588,75 @@
                 });
             });
         });
+
+        // Função para abrir modal de termos e condições
+        function openTermsModal() {
+            document.getElementById('termsModal').classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+            
+            // Carregar termos e condições via API
+            fetch('/api/terms-conditions')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('termsContent').innerHTML = data.content;
+                        document.getElementById('termsVersion').textContent = 'Versão ' + data.version;
+                    } else {
+                        document.getElementById('termsContent').innerHTML = '<p class="text-gray-500">Termos e condições não disponíveis no momento.</p>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar termos:', error);
+                    document.getElementById('termsContent').innerHTML = '<p class="text-red-500">Erro ao carregar termos e condições.</p>';
+                });
+        }
+
+        // Função para fechar modal de termos e condições
+        function closeTermsModal() {
+            document.getElementById('termsModal').classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+        }
     </script>
+
+    <!-- Modal de Termos e Condições -->
+    <div id="termsModal" class="fixed inset-0 bg-black/70 dark:bg-black/90 dark:backdrop-blur-sm z-50 hidden">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white dark:bg-slate-900 rounded max-w-4xl w-full max-h-[90vh] overflow-hidden border border-gray-300 dark:border-slate-800 dark:shadow-2xl">
+                <!-- Header do Modal -->
+                <div class="bg-white dark:bg-slate-800 px-6 py-4 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between">
+                    <div>
+                        <h3 class="text-base font-semibold text-gray-900 dark:text-white">Termos e Condições</h3>
+                        <p class="text-sm text-gray-500 dark:text-slate-400" id="termsVersion"></p>
+                    </div>
+                    <button type="button" 
+                            onclick="closeTermsModal()"
+                            class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <!-- Conteúdo do Modal -->
+                <div class="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+                    <div id="termsContent" class="prose prose-sm max-w-none text-gray-900 dark:text-slate-200">
+                        <div class="flex items-center justify-center py-8">
+                            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                            <span class="ml-3 text-gray-700 dark:text-slate-300">Carregando termos e condições...</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Footer do Modal -->
+                <div class="bg-white dark:bg-slate-800 px-6 py-4 border-t border-gray-200 dark:border-slate-700 flex justify-end">
+                    <button type="button" 
+                            onclick="closeTermsModal()"
+                            class="px-4 py-2 bg-gray-800 hover:bg-gray-900 dark:bg-gradient-to-r dark:from-indigo-500 dark:to-indigo-600 dark:hover:from-indigo-600 dark:hover:to-indigo-700 text-white rounded dark:rounded-lg font-medium transition-colors dark:shadow-lg dark:shadow-indigo-600/30">
+                        Fechar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
