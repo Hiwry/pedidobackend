@@ -951,20 +951,6 @@ window.openAddProductModal = function openAddProductModal(itemId, type = 'produc
                 <input type="hidden" id="modal-cut-type-id" value="${product.id}">
                 <input type="hidden" id="modal-fabric-id" value="${product.fabric_id || ''}">
             </div>
-            
-            <script>
-            function toggleStockDetails() {
-                const panel = document.getElementById('stock-details-panel');
-                const icon = document.getElementById('stock-toggle-icon');
-                if (panel.classList.contains('hidden')) {
-                    panel.classList.remove('hidden');
-                    icon.style.transform = 'rotate(180deg)';
-                } else {
-                    panel.classList.add('hidden');
-                    icon.style.transform = 'rotate(0deg)';
-                }
-            }
-            </script>
             ` : ''}
             
             ${sizesHtml}
@@ -2936,6 +2922,21 @@ window.calculateSizeSurcharges = async function calculateSizeSurcharges() {
         totalSurchargesElement.textContent = `R$ ${totalSurcharges.toFixed(2).replace('.', ',')}`;
     }
 }
+
+// Função para toggle do painel de estoque
+window.toggleStockDetails = function() {
+    const panel = document.getElementById('stock-details-panel');
+    const icon = document.getElementById('stock-toggle-icon');
+    if (panel && icon) {
+        if (panel.classList.contains('hidden')) {
+            panel.classList.remove('hidden');
+            icon.style.transform = 'rotate(180deg)';
+        } else {
+            panel.classList.add('hidden');
+            icon.style.transform = 'rotate(0deg)';
+        }
+    }
+};
 </script>
 @endsection
 
