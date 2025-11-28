@@ -916,7 +916,7 @@
     
     function submitApproveGroup(event) {
         event.preventDefault();
-        const requests = JSON.parse(document.getElementById('approve-group-requests').value);
+        const requestIds = JSON.parse(document.getElementById('approve-group-requests').value);
         const useRequested = document.getElementById('approve-group-use-requested').checked;
         const customQuantityInput = document.getElementById('approve-group-quantity').value;
         const customQuantity = customQuantityInput ? parseInt(customQuantityInput) : null;
@@ -929,20 +929,25 @@
         
         let successCount = 0;
         let errorCount = 0;
-        const promises = requests.map(request => {
-            const quantityToApprove = useRequested ? request.requested_quantity : Math.min(customQuantity, request.requested_quantity);
+        const promises = requestIds.map(requestId => {
+            // Se useRequested é true, não enviamos quantidade customizada
+            // O backend vai usar a quantidade solicitada
+            const approvalData = {
+                approval_notes: notes || 'Aprovação em grupo'
+            };
             
-            return fetch(`/stock-requests/${request.id}/approve`, {
+            if (!useRequested && customQuantity) {
+                approvalData.approved_quantity = customQuantity;
+            }
+            
+            return fetch(`/stock-requests/${requestId}/approve`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                     'Accept': 'application/json'
                 },
-                body: JSON.stringify({
-                    approved_quantity: quantityToApprove,
-                    approval_notes: notes || 'Aprovação em grupo'
-                })
+                body: JSON.stringify(approvalData)
             })
             .then(async res => {
                 const data = await res.json();
