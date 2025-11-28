@@ -243,9 +243,14 @@ class StockRequestController extends Controller
             }
 
         $validated = $request->validate([
-            'approved_quantity' => 'required|integer|min:1|max:' . ($stockRequest->requested_quantity ?? 999999),
+            'approved_quantity' => 'nullable|integer|min:1|max:' . ($stockRequest->requested_quantity ?? 999999),
             'approval_notes' => 'nullable|string|max:1000',
         ]);
+        
+        // Se não foi fornecida quantidade aprovada, usar a quantidade solicitada
+        if (!isset($validated['approved_quantity']) || $validated['approved_quantity'] === null) {
+            $validated['approved_quantity'] = $stockRequest->requested_quantity;
+        }
 
             // Verificar se há estoque disponível na loja de destino (se especificada)
             if ($stockRequest->target_store_id) {
